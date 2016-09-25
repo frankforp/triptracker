@@ -1,9 +1,8 @@
+import time
 from unittest import TestCase
 
-import time
-
-from datasources.providers.time_providers import SystemTimeProvider
-from datasources.timesource import TimeSource
+from datasources.providers import SystemTimeProvider
+from datasources.time_source import TimeSource
 from utils.ObserverObservable import Observer
 
 
@@ -18,9 +17,9 @@ class TimeSourceTest(TestCase):
             expected_time = self.testcase.start_time + self.update_rate
             print(self.testcase.start_time)
             print(expected_time)
-            print(arg)
+            print(int(arg.time()))
             print("*****")
-            self.testcase.assertEqual(expected_time, arg)
+            self.testcase.assertEqual(expected_time, int(arg.time()))
 
     def test_update_with5secinterval_shouldYieldCurrentTimePlus5Seconds(self):
         observer = TimeSourceTest.TimeSourceObserver(5, self)
@@ -29,6 +28,6 @@ class TimeSourceTest(TestCase):
         time_source.addObserver(observer)
         self.start_time = int(time.time())
         time_source.start()
-        time.sleep(10)
+        time.sleep(5)
         time_source.stop()
         time_source.deleteObservers()

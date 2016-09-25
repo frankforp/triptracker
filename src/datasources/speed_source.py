@@ -4,13 +4,13 @@ from utils.IntervalTimer import IntervalTimer
 from utils.ObserverObservable import Observable
 
 
-class LocationSource(Observable):
-    def __init__(self, update_rate, location_provider):
+class SpeedSource(Observable):
+    def __init__(self, update_rate, speed_provider):
         Observable.__init__(self)
         self.update_rate = update_rate
         self.timer = IntervalTimer(update_rate, self.timer_function)
-        self.location = None
-        self.location_provider = location_provider
+        self.speed = None
+        self.speed_provider = speed_provider
 
     def start(self):
         self.timer.start()
@@ -18,10 +18,10 @@ class LocationSource(Observable):
     def stop(self):
         self.timer.stop()
 
-    def get_current_location(self):
-        return self.location
+    def get_current_speed(self):
+        return self.speed
 
     def timer_function(self):
-        self.location = self.location_provider.get_location()
+        self.speed = self.speed_provider.get_speed_in_meter_per_second()
         self.setChanged()
-        self.notifyObservers(self.location)
+        self.notifyObservers(self.speed)
