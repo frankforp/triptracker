@@ -1,0 +1,30 @@
+#kivy 1.9.0
+<TriptrackerScreen>
+    GridLayout:
+        size: root.size
+        cols: 2
+        rows: 4
+        Label:
+            text: 'Time:'
+            font_size: 30
+        Label:
+            id: lblTime
+            text: '13:15'
+            font_size: 40
+            color: 1, 1, 0, 1
+        Label:
+            text: 'Location:'
+            font_size: 30
+        Label:
+            id: lblLocation
+            text: '51.5889 N 5.88273 E'
+            color: 1, 1, 0, 1
+            font_size: 40
+        Label:
+            text: 'Speed:'
+            font_size: 30
+        Label:
+            id: lblSpeed
+            text: '38 km/h'
+            color: 1, 1, 0, 1
+            font_size: 40

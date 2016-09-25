@@ -25,4 +25,4 @@ class TimeSource(Observable):
     def timer_function(self):
         self.time = self.time_provider.get_time()
         self.setChanged()
-        self.notifyObservers(time)
+        self.notifyObservers(self.time)

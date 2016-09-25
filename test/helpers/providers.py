@@ -13,18 +13,18 @@ class StubbedProvider(TimeProvider, LocationProvider, SpeedProvider):
         gpx = gpxpy.parse(gpx_file)
         self.gpxdata = [point for track in gpx.tracks for segment in track.segments for point in segment.points]
         self.current_index = 0
-        self.lat = None
-        self.lon = None
+
+    def __update__(self):
+        self.current_index = (self.current_index + 1) % len(self.gpxdata)
 
     def get_location(self):
-        self.lat = self.gpxdata[self.current_index].latitude
-        self.lon = self.gpxdata[self.current_index].longitude
-        self.current_index = (self.current_index + 1) % len(self.gpxdata)
-        return self.lat, self.lon
+        result = (self.gpxdata[self.current_index].latitude, self.gpxdata[self.current_index].longitude)
+        return result
 
     def get_time(self):
-        return time.time()
+        return self.gpxdata[self.current_index].time.timestamp()
 
     def get_speed_in_meter_per_second(self):
+        self.__update__()
         return random.uniform(0, 36)
 
