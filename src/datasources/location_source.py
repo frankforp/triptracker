@@ -1,17 +1,16 @@
-import threading
 import time
 
 from utils.IntervalTimer import IntervalTimer
 from utils.ObserverObservable import Observable
 
 
-class TimeSource(Observable, threading.Thread):
-    def __init__(self, update_rate, time_provider):
+class LocationSource(Observable):
+    def __init__(self, update_rate, location_provider):
         Observable.__init__(self)
         self.update_rate = update_rate
         self.timer = IntervalTimer(update_rate, self.timer_function)
-        self.time = None
-        self.time_provider = time_provider
+        self.location = None
+        self.location_provider = location_provider
 
     def start(self):
         self.timer.start()
@@ -19,10 +18,10 @@ class TimeSource(Observable, threading.Thread):
     def stop(self):
         self.timer.stop()
 
-    def get_current_epoch_time(self):
-        return self.time
+    def get_current_location(self):
+        return self.location
 
     def timer_function(self):
-        self.time = self.time_provider.get_time()
+        self.location = self.location_provider.get_location()
         self.setChanged()
-        self.notifyObservers(time)
+        self.notifyObservers(self.location)
