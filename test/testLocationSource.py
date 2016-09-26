@@ -1,7 +1,7 @@
 import time
 from unittest import TestCase
 
-from datasources.location_source import LocationSource
+from datasources.datasource import DataSource
 from utils.ObserverObservable import Observer
 
 
@@ -18,7 +18,7 @@ class LocationSourceTest(TestCase):
         observer = LocationSourceTest.LocationSourceObserver(self)
         from test.helpers.providers import StubbedProvider
         location_provider = StubbedProvider()
-        location_source = LocationSource(1, location_provider)
+        location_source = DataSource(1, None, location_provider, None)
         location_source.addObserver(observer)
         location_source.start()
         time.sleep(2)

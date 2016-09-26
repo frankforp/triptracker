@@ -62,4 +62,4 @@ class GpsProvider(LocationProvider, TimeProvider, SpeedProvider):
         return self.time
 
     def get_location(self):
-        return (self.lat, self.lon)
+        return self.lat, self.lon

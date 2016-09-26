@@ -1,66 +1,63 @@
 from time import strftime, localtime
 
-from datasources.location_source import LocationSource
-from datasources.speed_source import SpeedSource
-from datasources.time_source import TimeSource
+from datasources.datasource import DataSource
 from test.helpers.providers import StubbedProvider
 from utils.ObserverObservable import Observer, Observable
 
 
 class CurrentDataViewModel(Observer, Observable):
-    def __init__(self, location_source, speed_source, time_source):
+    def __init__(self, data_source):
         Observable.__init__(self)
-        self.location_source = location_source
-        self.speed_source = speed_source
-        self.time_source = time_source
+        self.data_source = data_source
         self.time = None
+        self.locationString = ""
         self.location = (None, None)
         self.speed = None
-        self.location_source.addObserver(self)
-        self.time_source.addObserver(self)
-        self.speed_source.addObserver(self)
+        self.data_source.addObserver(self)
 
     def update(self, observable, arg):
-        if isinstance(observable, TimeSource):
-            if arg is not None:
-                self.time = strftime("%d-%m-%Y %H:%M:%S", localtime(arg))
+        time = arg[0]
+        location = arg[1]
+        speed = arg[2]
+
+        if time is not None:
+            self.time = strftime("%d-%m-%Y %H:%M:%S", localtime(time))
+        else:
+            self.time = None
+
+        if location[0] is None or location[1] is None:
+            self.locationString = "N/A"
+        else:
+            if location[0] >= 0:
+                latString = '{0:.3f}° N'.format(location[0])
             else:
-                self.time = None
-        if isinstance(observable, LocationSource):
-            if arg is not None:
-                if arg[0] is not None and arg[0] >= 0:
-                    latString = '{0:.3f}° N'.format(arg[0])
-                else:
-                    latString = '{0:.3f}° S'.format(arg[0])
+                latString = '{0:.3f}° S'.format(location[0])
 
-                if arg[1] is not None and arg[1] >= 0:
-                    lonString = '{0:.3f}° E'.format(arg[1])
-                else:
-                    lonString = '{0:.3f}° W'.format(arg[1])
-
-                self.location = '{0} {1}'.format(latString, lonString)
+            if location[1] >= 0:
+                lonString = '{0:.3f}° E'.format(location[1])
             else:
-                self.location = "N/A"
+                lonString = '{0:.3f}° W'.format(location[1])
 
-        if isinstance(observable, SpeedSource):
-            self.speed = '{:.1f} km/h'.format(arg * 3.6)
+            self.locationString = '{0} {1}'.format(latString, lonString)
+            self.location = location
 
-        print (self.__str__())
+        if speed is not None:
+            self.speed = '{:.1f} km/h'.format(speed * 3.6)
+        else:
+            self.speed = "N/A"
+
+        print(self)
         self.setChanged()
-        self.notifyObservers(arg=(self.time, self.location, self.speed))
+        self.notifyObservers(arg=(self.time, self.locationString, self.speed, self.location))
 
 
     def __str__(self):
-        return (self.time, self.location, self.speed).__str__()
+        return (self.time, self.locationString, self.speed).__str__()
 
 
 if __name__ == "__main__":
     provider = StubbedProvider()
-    location_source = LocationSource(2, provider)
-    timer_source = TimeSource(2, provider)
-    speed_source = SpeedSource(2, provider)
+    datasource = DataSource(1, provider, provider, provider)
 
-    vm = CurrentDataViewModel(location_source, timer_source, speed_source)
-    timer_source.start()
-    location_source.start()
-    speed_source.start()
+    vm = CurrentDataViewModel(datasource)
+    datasource.start()
