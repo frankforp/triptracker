@@ -1,7 +1,7 @@
-
 from kivy.app import App
 from kivy.clock import mainthread
 from kivy.lang import Builder
+from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.widget import Widget
 
 from datasources.datasource import DataSource
@@ -11,15 +11,16 @@ from viewmodels.viewmodels import CurrentDataViewModel
 from kivy.garden.mapview import MapView
 
 
-class CurrentDataScreen(Widget, Observer):
+class TripScreen(Screen):
+    pass
 
 
+class CurrentDataScreen(Screen, Observer):
     def init_stuff(self, vm):
         self.current_data_viewmodel = vm
         self.current_data_viewmodel.addObserver(self)
 
     def update(self, observable, arg):
-
         self.updateUI(arg)
 
     @mainthread
@@ -29,7 +30,6 @@ class CurrentDataScreen(Widget, Observer):
         speedLabel = self.ids['lblSpeed']
         theMap = self.ids['map']
         popup = self.ids['popup']
-
 
         timelabel.text = str(data[0])
         locationlabel.text = str(data[1])
@@ -43,11 +43,7 @@ class CurrentDataScreen(Widget, Observer):
             theMap.center_on(lat, lon)
 
 
-
-
-
-class FluApp(App):
-
+class TriptrackerApp(App):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         provider = StubbedProvider()
@@ -61,13 +57,16 @@ class FluApp(App):
         self.datasource.stop()
 
     def build(self):
-        Builder.load_file('triptracker.kv')
-        screen = CurrentDataScreen()
-        screen.init_stuff(self.vm)
+        sm = ScreenManager()
 
+        currentScreen = CurrentDataScreen(name='current')
+        currentScreen.init_stuff(self.vm)
 
-        return screen
+        sm.add_widget(currentScreen)
+        sm.add_widget(TripScreen(name='trip'))
+
+        return sm
 
 
 if __name__ == '__main__':
-    FluApp().run()
+    TriptrackerApp().run()
