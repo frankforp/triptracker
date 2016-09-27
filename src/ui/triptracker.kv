@@ -8,7 +8,7 @@
             Button:
                 pos_hint: {'top': 1}
                 text: 'Trip'
-                font_size: 30
+                font_size: 25
                 on_press:
                     root.manager.transition.direction = 'right'
                     root.manager.current = 'trip'
@@ -18,10 +18,11 @@
                 font_size: 40
             Button:
                 pos_hint: {'top': 1}
-                text: 'Go to trip'
+                text: 'Settings'
+                font_size: 25
                 on_press:
-                    root.manager.transition.direction = 'right'
-                    root.manager.current = 'trip'
+                    root.manager.transition.direction = 'left'
+                    root.manager.current = 'trip_inactive'
 
         GridLayout:
             size_hint: 1, .8
@@ -32,7 +33,7 @@
                 font_size: 30
             Label:
                 id: lblTime
-                text: '13:15'
+                text: root.time
                 font_size: 40
                 color: 1, 1, 0, 1
             Label:
@@ -40,7 +41,7 @@
                 font_size: 30
             Label:
                 id: lblLocation
-                text: '51.5889 N 5.88273 E'
+                text: root.locationString
                 color: 1, 1, 0, 1
                 font_size: 40
             Label:
@@ -48,22 +49,21 @@
                 font_size: 30
             Label:
                 id: lblSpeed
-                text: '38 km/h'
+                text: root.speed
                 color: 1, 1, 0, 1
                 font_size: 40
 
         RelativeLayout:
             MapView:
                 pos_hint: {'center_x': .5}
-
                 id: map
-                lat: 50.6394
-                lon: 3.057
+                lat: root.lat
+                lon: root.lon
                 zoom: 13
                 MapMarkerPopup:
                     id: popup
-                    lat: 50.6394
-                    lon: 3.057
+                    lat: root.lat
+                    lon: root.lon
                     popup_size: dp(230), dp(130)
 
 
@@ -72,40 +72,135 @@
         size: root.size
         orientation: 'vertical'
         BoxLayout:
+            size_hint: 1, .2
             Button:
-                text: 'Go to current'
+                size_hint: 1, .7
+                pos_hint: {'top': 1}
+                text: 'Current'
+                font_size: 25
                 on_press:
-                    root.manager.transition.direction = 'left'
+                    root.manager.transition.direction = 'right'
                     root.manager.current = 'current'
             Label:
-                size_hint: 1, 0.5
-                position_hint: 0, 0
-                text: 'Trip data'
-                font_size: 50
+                text: 'Trip'
+                pos_hint: {'top': 1}
+                font_size: 40
+            Button:
+                size_hint: 1, .7
+                pos_hint: {'top': 1}
+                text: 'Settings'
+                font_size: 25
+                on_press:
+                    root.manager.transition.direction = 'left'
+                    root.manager.current = 'trip_inactive'
+
+
         GridLayout:
+            pos_hint: {'top': 1}
+            size_hint: 1, .8
             cols: 2
-            rows: 4
+            rows: 6
             Label:
-                text: 'Time:'
+                text: 'Type:'
                 font_size: 30
             Label:
-                id: lblTime
-                text: '13:15'
+                id: lblType
+                text: 'Business'
                 font_size: 40
                 color: 1, 1, 0, 1
             Label:
-                text: 'Location:'
+                text: 'Started on:'
                 font_size: 30
             Label:
-                id: lblLocation
-                text: '51.5889 N 5.88273 E'
+                id: lblStartTime
+                text: '2016-09-26 13:12:12'
                 color: 1, 1, 0, 1
                 font_size: 40
             Label:
-                text: 'Speed:'
+                text: 'Odometer at start:'
                 font_size: 30
             Label:
-                id: lblSpeed
-                text: '38 km/h'
+                id: lblStartOdometer
+                text: '99320'
                 color: 1, 1, 0, 1
                 font_size: 40
+            Label:
+                text: 'Duration'
+                font_size: 30
+            Label:
+                id: lblDuration
+                text: '1:33:23'
+                color: 1, 1, 0, 1
+                font_size: 40
+            Label:
+                text: 'Distance'
+                font_size: 30
+            Label:
+                id: lblDistance
+                text: '45.4 km'
+                color: 1, 1, 0, 1
+                font_size: 40
+            Label:
+                text: 'Average speed'
+                font_size: 30
+            Label:
+                id: lblAvgSped
+                text: '99.3 km/h'
+                color: 1, 1, 0, 1
+                font_size: 40
+
+        BoxLayout:
+            size_hint: 1, .2
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Stop'
+                font_size: 25
+                on_press:
+                    root.manager.transition.direction = 'right'
+                    root.manager.current = 'trip'
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Pause'
+                font_size: 25
+                on_press:
+                    root.manager.transition.direction = 'left'
+                    root.manager.current = 'trip'
+
+
+<InactiveTripScreen>
+    BoxLayout:
+        size: root.size
+        orientation: 'vertical'
+        BoxLayout:
+            size_hint: 1, .2
+            Button:
+                size_hint: 1, .7
+                pos_hint: {'top': 1}
+                text: 'Current'
+                font_size: 25
+                on_press:
+                    root.manager.transition.direction = 'right'
+                    root.manager.current = 'current'
+            Label:
+                text: 'Trip'
+                pos_hint: {'top': 1}
+                font_size: 40
+            Button:
+                size_hint: 1, .7
+                pos_hint: {'top': 1}
+                text: 'Settings'
+                font_size: 25
+                on_press:
+                    root.manager.transition.direction = 'left'
+                    root.manager.current = 'trip'
+        Label:
+            text: 'No trip active. Press start'
+            color: 1, 0, 0, 1
+            font_size: 40
+
+        BoxLayout:
+            size_hint: 1, .2
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Start'
+                font_size: 25

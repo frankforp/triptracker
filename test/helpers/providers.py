@@ -8,7 +8,7 @@ from datasources.providers import LocationProvider, TimeProvider, SpeedProvider
 
 class StubbedProvider(TimeProvider, LocationProvider, SpeedProvider):
     def __init__(self):
-        gpx_file = open("/home/developer/projects/triptracker/test/sampledata/sample_locations.gpx")
+        gpx_file = open("/home/wildfly/development/other/triptracker/test/sampledata/sample_locations.gpx")
         print("Loading sample gpx data..")
         gpx = gpxpy.parse(gpx_file)
         self.gpxdata = [point for track in gpx.tracks for segment in track.segments for point in segment.points]

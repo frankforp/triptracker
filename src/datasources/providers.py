@@ -33,10 +33,18 @@ class GpsProvider(LocationProvider, TimeProvider, SpeedProvider):
         self.lon = None
         self.time = None
         self.speed = None
-        if host is None or port is None:
+        self.host = host
+        self.port = port
+
+
+    def connect(self):
+        if self.host is None or self.port is None:
             gpsd.connect()
         else:
-            gpsd.connect(host, port)
+            gpsd.connect(self.host, self.port)
+
+    def disconnect(self):
+        gpsd.gpsd_socket.close()
 
     def poll(self):
         try:
