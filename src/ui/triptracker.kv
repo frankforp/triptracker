@@ -4,16 +4,27 @@
         size: root.size
         orientation: 'vertical'
         BoxLayout:
+            size_hint: 1, .2
             Button:
-                text: 'Go to trip'
+                pos_hint: {'top': 1}
+                text: 'Trip'
+                font_size: 30
                 on_press:
                     root.manager.transition.direction = 'right'
                     root.manager.current = 'trip'
             Label:
                 text: 'Current data'
-                position_hint: 1, 1
-                font_size: 50
+                pos_hint: {'top': 1}
+                font_size: 40
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Go to trip'
+                on_press:
+                    root.manager.transition.direction = 'right'
+                    root.manager.current = 'trip'
+
         GridLayout:
+            size_hint: 1, .8
             cols: 2
             rows: 4
             Label:
@@ -41,9 +52,10 @@
                 color: 1, 1, 0, 1
                 font_size: 40
 
-        ScatterLayout:
-
+        RelativeLayout:
             MapView:
+                pos_hint: {'center_x': .5}
+
                 id: map
                 lat: 50.6394
                 lon: 3.057
