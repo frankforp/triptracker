@@ -31,10 +31,13 @@ class DataSource(Observable):
 
     def timer_function(self):
         if self.location_provider is not None:
+            self.location_provider.poll()
             self.location = self.location_provider.get_location()
         if self.time_provider is not None:
+            self.time_provider.poll()
             self.time = self.time_provider.get_time()
         if self.speed_provider is not None:
+            self.speed_provider.poll()
             self.speed = self.speed_provider.get_speed_in_meter_per_second()
 
         self.setChanged()

@@ -7,6 +7,7 @@ from kivy.properties import StringProperty, NumericProperty
 from kivy.uix.screenmanager import ScreenManager, Screen
 
 from datasources.datasource import DataSource
+from datasources.providers import GpsProvider, SystemTimeProvider
 from test.helpers.providers import StubbedProvider
 from utils.ObserverObservable import Observer
 from kivy.garden.mapview import MapView
@@ -73,9 +74,11 @@ class CurrentDataScreen(Screen, Observer, EventDispatcher):
     def update_ui(self, data):
         self.time = __format_time__(data[0])
         self.locationString = __get_location_string__(data[1])
-        self.lat = data[1][0]
-        self.lon = data[1][1]
-        self.__updateMap__()
+        if data[1][0] is not None and data[1][1] is not None:
+            self.lat = data[1][0]
+            self.lon = data[1][1]
+            self.__updateMap__()
+
         self.speed = __get_speed__(data[2])
 
     def __updateMap__(self):
@@ -89,14 +92,17 @@ class CurrentDataScreen(Screen, Observer, EventDispatcher):
 class TriptrackerApp(App):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        provider = StubbedProvider()
-        self.data_source = DataSource(1, provider, provider, provider)
+        self.provider = GpsProvider(None, None)
+        self.time_provider = SystemTimeProvider()
+        self.data_source = DataSource(1, self.time_provider, self.provider, self.provider)
 
     def on_start(self):
+        self.provider.connect()
         self.data_source.start()
 
     def on_stop(self):
         self.data_source.stop()
+        self.provider.disconnect()
 
     def build(self):
         sm = ScreenManager()
