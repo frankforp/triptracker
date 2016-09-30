@@ -3,8 +3,13 @@ from time import strftime, localtime
 from kivy.app import App
 from kivy.clock import mainthread
 from kivy.event import EventDispatcher
+from kivy.factory import Factory
 from kivy.properties import StringProperty, NumericProperty
-from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.button import Button
+from kivy.uix.modalview import ModalView
+from kivy.uix.popup import Popup
+from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition, FallOutTransition, SwapTransition
+from kivy.uix.textinput import TextInput
 
 from datasources.datasource import DataSource
 from datasources.providers import GpsProvider, SystemTimeProvider
@@ -18,7 +23,31 @@ class TripScreen(Screen):
 
 
 class InactiveTripScreen(Screen):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(**kwargs)
+        self.myModal = Factory.MyModalView()
+
+    def start_trip(self):
+        self.myModal.title = "Start trip"
+        self.myModal.caption = "Enter your odometer reading:"
+        self.myModal.bind(on_dismiss=self.modal_closed)
+        self.myModal.open()
+
+    def modal_closed(self, instance):
+        print (instance.entered_text)
+        if instance.entered_text == "":
+            return False;
+
+        odometer = instance.entered_text
+        #App.get_running_app().active_trip = Trip(odometer)
+        #App.get_running_app().active_trip.start()
+
+        sm.transition.direction = 'left'
+        sm.current = 'trip'
+
+
+
+
 
 
 def __get_location_string__(location):
@@ -95,6 +124,7 @@ class TriptrackerApp(App):
         self.provider = GpsProvider(None, None)
         self.time_provider = SystemTimeProvider()
         self.data_source = DataSource(1, self.time_provider, self.provider, self.provider)
+        self.active_trip = None
 
     def on_start(self):
         self.provider.connect()
@@ -105,8 +135,6 @@ class TriptrackerApp(App):
         self.provider.disconnect()
 
     def build(self):
-        sm = ScreenManager()
-
         current_screen = CurrentDataScreen(name='current')
         current_screen.init_data_source(data_source=self.data_source)
 
@@ -116,6 +144,8 @@ class TriptrackerApp(App):
 
         return sm
 
+
+sm = ScreenManager()
 
 if __name__ == '__main__':
     TriptrackerApp().run()

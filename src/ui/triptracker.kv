@@ -11,7 +11,7 @@
                 font_size: 25
                 on_press:
                     root.manager.transition.direction = 'right'
-                    root.manager.current = 'trip'
+                    root.manager.current = 'trip_inactive' if app.active_trip == None else 'trip'
             Label:
                 text: 'Current data'
                 pos_hint: {'top': 1}
@@ -204,3 +204,45 @@
                 pos_hint: {'top': 1}
                 text: 'Start'
                 font_size: 25
+                on_press:
+                    root.start_trip()
+
+<MyModalView@ModalView>:
+    size_hint: None, None
+    size: 400, 400
+    auto_dismiss: False
+    caption: ''
+    title: ''
+    entered_text: ''
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 10
+        Label:
+            font_size: 30
+            size_hint: 1, None
+            size: 400, 50
+            pos_hint: {'top': 1}
+            text: root.title
+        Label:
+            size_hint: 1, None
+            size: 400, 50
+            text: root.caption
+
+        TextInput:
+            size_hint: 1, None
+            size: 400, 50
+            id: txtEntered
+            font_size: 25
+            on_text: root.entered_text = self.text
+
+        Label:
+            size_hint: 1, 0.4
+
+        Button:
+            padding: 20, 20
+            size_hint: 1, None
+            size: 400, 70
+            text: 'OK'
+            on_press:
+                root.dismiss()
