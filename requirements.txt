@@ -3,3 +3,4 @@ geopy
 cython == 0.23
 gps3
 python-dateutil
+blinker
