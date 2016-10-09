@@ -1,0 +1,5 @@
+kivy >= 0.91
+geopy
+cython == 0.23
+gps3
+python-dateutil
