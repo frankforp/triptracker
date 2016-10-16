@@ -1,0 +1,67 @@
+#kivy 1.9.0
+<CurrentDataScreen>
+    map: map
+    map_popup: popup
+
+    BoxLayout:
+        size: root.size
+        orientation: 'vertical'
+        BoxLayout:
+            size_hint: 1, .2
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Trip'
+                font_size: 25
+                on_press:
+                    root.manager.transition.direction = 'right'
+                    root.manager.current = 'trip_inactive' if app.active_trip == None else 'trip'
+            Label:
+                text: 'Current data'
+                pos_hint: {'top': 1}
+                font_size: 40
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Settings'
+                font_size: 25
+                on_press:
+                    root.manager.transition.direction = 'left'
+                    root.manager.current = 'trip_inactive'
+
+        GridLayout:
+            size_hint: 1, .8
+            cols: 2
+            rows: 4
+            Label:
+                text: 'Time:'
+                font_size: 30
+            Label:
+                id: lblTime
+                text: root.time
+                font_size: 40
+                color: 1, 1, 0, 1
+            Label:
+                text: 'Location:'
+                font_size: 30
+            Label:
+                id: lblLocation
+                text: root.locationString
+                color: 1, 1, 0, 1
+                font_size: 40
+            Label:
+                text: 'Speed:'
+                font_size: 30
+            Label:
+                id: lblSpeed
+                text: root.speed
+                color: 1, 1, 0, 1
+                font_size: 40
+
+        RelativeLayout:
+            MapView:
+                pos_hint: {'center_x': .5}
+                id: map
+                zoom: 13
+                MapMarkerPopup:
+                    id: popup
+                    popup_size: dp(230), dp(130)
+
