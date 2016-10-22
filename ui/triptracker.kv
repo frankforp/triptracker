@@ -14,9 +14,8 @@
                 font_size: 25
                 on_press:
                     root.manager.transition.direction = 'right'
-                    root.manager.current = 'trip_inactive' if app.active_trip == None else 'trip'
             Label:
-                text: 'Current data'
+                text: 'Current'
                 pos_hint: {'top': 1}
                 font_size: 40
             Button:
@@ -25,7 +24,6 @@
                 font_size: 25
                 on_press:
                     root.manager.transition.direction = 'left'
-                    root.manager.current = 'trip_inactive'
 
         GridLayout:
             size_hint: 1, .8

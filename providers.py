@@ -1,13 +1,12 @@
-from abc import abstractmethod, ABCMeta
+from abc import ABCMeta, abstractmethod
 
-from blinker import signal
 from dateutil.parser import parse
 from gps3 import agps3
 
 
 class DataProvider(metaclass=ABCMeta):
     @abstractmethod
-    def collect(self):
+    def update(self):
         pass
 
     @abstractmethod
@@ -19,63 +18,106 @@ class DataProvider(metaclass=ABCMeta):
         pass
 
 
-class TimeProvider(DataProvider, metaclass=ABCMeta):
-    _time_changed = signal('new_time_provided')
+class TimeProvider(metaclass=ABCMeta):
+    @abstractmethod
+    def get_time(self):
+        pass
+
+    @abstractmethod
+    def has_error_occured(self):
+        pass
 
 
-class PositionProvider(DataProvider, metaclass=ABCMeta):
-    _position_changed = signal('new_position_provided')
+class PositionProvider(metaclass=ABCMeta):
 
 
-class SpeedProvider(DataProvider, metaclass=ABCMeta):
-    _speed_changed = signal('new_speed_provided')
+    @abstractmethod
+    def get_position(self):
+        pass
+
+    @abstractmethod
+    def has_error_occured(self):
+        pass
 
 
-class GpsProvider(PositionProvider, TimeProvider, SpeedProvider):
+class SpeedProvider(metaclass=ABCMeta):
+    @abstractmethod
+    def get_speed(self):
+        pass
 
-    _gpsd_socket = agps3.GPSDSocket()
-    _data_stream = agps3.DataStream()
-    _is_started = False
+    @abstractmethod
+    def has_error_occured(self):
+        pass
 
-    def __init__(self, host, port):
-        self.host = host
-        self.port = port
-    # for new_data in gpsd_socket:
-    #     if new_data:
-    #         data_stream.unpack(new_data)
-    #         print('Altitude = ', data_stream.alt)
-    #         print('Latitude = ', data_stream.lat)
+
+class GpsProvider(DataProvider, TimeProvider, PositionProvider, SpeedProvider):
+
+    __gpsd_socket = agps3.GPSDSocket()
+    __data_stream = agps3.DataStream()
+    __is_started = False
+    __position = (None, None)
+    __time = None
+    __speed = None
+    __fixtype = None
+    __has_error_occurred = False
+    __last_error = None
+
+    def __init__(self, host="localhost", port=2947):
+        self.__host = host
+        self.__port = port
 
     def start(self):
-        if not self._is_started:
-            self._gpsd_socket.connect()
-            self._gpsd_socket.watch()
-            self._is_started = True
+        if not self.__is_started:
+            self.__gpsd_socket.connect(self.__host, self.__port)
+            self.__gpsd_socket.watch()
+            self.__is_started = True
 
     def stop(self):
-        if self._is_started:
-            self._gpsd_socket.close()
-            self._is_started = False
+        if self.__is_started:
+            self.__gpsd_socket.close()
+            self.__is_started = False
 
-    def collect(self):
+    def update(self):
+        self.__has_error_occurred = False
         try:
-            new_data = self._gpsd_socket.next()
+            new_data = self.__gpsd_socket.next()
             if new_data:
-                self._data_stream.unpack(new_data)
-                if self._data_stream.lat != 'n/a' and self._data_stream.lon != 'n/a':
-                    self._position_changed.send(new_value=(float(self._data_stream.lat), float(self._data_stream.lon)))
+                self.__data_stream.unpack(new_data)
+                if self.__data_stream.mode != 'n/a':
+                    fixtype = int(self.__data_stream.mode)
+                    if fixtype > 0:
+                        self.__fixtype = fixtype
 
-                if self._data_stream.time != 'n/a':
-                    time = parse(self._data_stream.time)
-                    self._time_changed.send(new_value=time.timestamp())
+                if self.__data_stream.lat != 'n/a' and self.__data_stream.lon != 'n/a':
+                    self.__position = (float(self.__data_stream.lat), float(self.__data_stream.lon))
 
-                if self._data_stream.speed != 'n/a':
-                    self._speed_changed.send(new_value=float(self._data_stream.speed))
+                if self.__data_stream.time != 'n/a':
+                    time = parse(self.__data_stream.time)
+                    self.__time = time.timestamp()
+
+                if self.__data_stream.speed != 'n/a':
+                    self.__speed = float(self.__data_stream.speed)
 
         except Exception as e:
             print("Could not retrieve gps data ", e)
-            self._position_changed.send(new_value=(None, None))
-            self._time_changed.send(new_value=None)
-            self._speed_changed.send(new_value=None)
+            self.__has_error_occurred = True
+            self.__last_error = e
 
+    def get_speed(self):
+        self.update()
+        return self.__speed
+
+    def get_position(self):
+        self.update()
+        return self.__fixtype, self.__position
+
+    def get_time(self):
+        self.update()
+        return self.__time
+
+    def has_error_occured(self):
+        return self.__has_error_occurred
+
+    def get_last_error(self):
+        return self.__last_error
 

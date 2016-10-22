@@ -1,5 +1,3 @@
-import time
-
 from blinker import signal
 
 from models import CurrentData
@@ -7,43 +5,77 @@ from utils import IntervalTimer
 
 
 class CurrentDataCollector:
-    _current_data = CurrentData()
-    _on_time_changed = signal('new_time_provided')
-    _on_position_changed = signal('new_position_provided')
-    _on_speed_changed = signal('new_speed_provided')
+    __current_data = CurrentData()
+    __on_time_changed = signal('new_time_available')
+    __on_position_changed = signal('new_position_available')
+    __on_speed_changed = signal('new_speed_available')
+    __on_error_occurred = signal('provider_error_occured')
 
-    def __init__(self, time_provider, position_provider, speed_provider, interval_in_seconds=1):
-        self._speed_provider = speed_provider
-        self._position_provider = position_provider
-        self._time_provider = time_provider
-        self._collecttimer = IntervalTimer(interval_in_seconds=interval_in_seconds, function=self._collect_data)
-        self._on_time_changed.connect(self._update_time)
-        self._on_position_changed.connect(self._update_position)
-        self._on_speed_changed.connect(self._update_speed)
-
-    def start(self):
-        self._time_provider.start()
-        self._position_provider.start()
-        self._speed_provider.start()
-        self._collecttimer.start()
-
-    def stop(self):
-        self._collecttimer.stop()
-        self._time_provider.stop()
-        self._position_provider.stop()
-        self._speed_provider.stop()
+    def __init__(self):
+        self.__on_time_changed.connect(self._update_time)
+        self.__on_position_changed.connect(self._update_position)
+        self.__on_speed_changed.connect(self._update_speed)
+        self.__on_error_occurred.connect(self.__error_occurred)
 
     def _update_time(self, sender, **kw):
-        self._current_data.epoch_time = kw['new_value']
+        self.__current_data.epoch_time = kw['new_value']
 
     def _update_position(self, sender, **kw):
-        self._current_data.position = kw['new_value']
+        new_value = kw['new_value']
+        self.__current_data.position = new_value['lat'], new_value['lon']
+        self.__current_data.fixtype = new_value['fixtype']
 
     def _update_speed(self, sender, **kw):
-        self._current_data.speed_in_ms = kw['new_value']
+        self.__current_data.speed_in_ms = kw['new_value']
 
-    def _collect_data(self):
-        self._speed_provider.collect()
-        self._position_provider.collect()
-        self._time_provider.collect()
+    def __error_occurred(self, sender, **kw):
+        print("Error getting data from {0}: {1}".format(kw['origin'], kw['error']))
 
+
+class Poller:
+    __time_changed = signal('new_time_available')
+    __position_changed = signal('new_position_available')
+    __speed_changed = signal('new_speed_available')
+    __error_occurred = signal('provider_error_occured')
+
+    def __init__(self, time_provider, position_provider, speed_provider, interval_in_seconds=1):
+        self.__speed_provider = speed_provider
+        self.__position_provider = position_provider
+        self.__time_provider = time_provider
+        self.__polltimer = IntervalTimer(interval_in_seconds=interval_in_seconds, function=self.__poll)
+
+    def start(self):
+        self.__speed_provider.start()
+        self.__position_provider.start()
+        self.__time_provider.start()
+        self.__polltimer.start()
+
+    def stop(self):
+        self.__speed_provider.stop()
+        self.__position_provider.stop()
+        self.__time_provider.stop()
+        self.__polltimer.stop()
+
+    def __poll(self):
+        epoch_time = self.__time_provider.get_time()
+        print ("Time {0}".format(epoch_time))
+        if self.__time_provider.has_error_occured():
+            self.__error_occurred.send(origin='time_provider', error=self.__time_provider.get_last_error())
+        else:
+            self.__time_changed.send(new_value=epoch_time)
+
+        position = self.__position_provider.get_position()
+        print("Pos {0}".format(position))
+        if self.__time_provider.has_error_occured():
+            self.__error_occurred.send(origin='position_provider', error=self.__position_provider.get_last_error())
+        else:
+            self.__position_changed.send(
+                new_value=dict(lat=position[1][0], lon=position[1][1], fixtype=position[0]))
+
+
+        speed = self.__speed_provider.get_speed()
+        print("Speed {0}".format(speed))
+        if self.__speed_provider.has_error_occured():
+            self.__error_occurred.send(origin='speed_provider', error=self.__speed_provider.get_last_error())
+        else:
+            self.__speed_changed.send(new_value=speed)

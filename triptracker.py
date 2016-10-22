@@ -2,17 +2,16 @@ from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager
 
-from operations import CurrentDataCollector
+from operations import CurrentDataCollector, Poller
 from providers import GpsProvider
 from ui.views import CurrentDataScreen
 from kivy.garden.mapview import MapView
 
 
 class TriptrackerApp(App):
-
-    _provider = GpsProvider("localhost", 2947)
-    curr_datacollector = CurrentDataCollector(position_provider=_provider, time_provider=_provider,
-                                              speed_provider=_provider)
+    __provider = GpsProvider()
+    __poller = Poller(__provider, __provider, __provider)
+    curr_data_collector = CurrentDataCollector()
 
     def build(self):
         Builder.load_file('ui/triptracker.kv')
@@ -22,7 +21,10 @@ class TriptrackerApp(App):
         return sm
 
     def on_start(self):
-        self.curr_datacollector.start()
+        self.__poller.start()
+
+    def on_stop(self):
+        self.__poller.stop()
 
 
 sm = ScreenManager()
