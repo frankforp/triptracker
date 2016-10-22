@@ -25,7 +25,7 @@ class CurrentData:
     time_changed = signal('time_changed')
     position_changed = signal('position_changed')
     speed_changed = signal('speed_changed')
-    fixtype_changed = signal('fixtype_changed')
+    fixtype_changed = signal('fix_changed')
 
     __epoch_time = 0
     __position = (None, None)

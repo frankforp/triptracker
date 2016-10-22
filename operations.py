@@ -22,8 +22,12 @@ class CurrentDataCollector:
 
     def _update_position(self, sender, **kw):
         new_value = kw['new_value']
-        self.__current_data.position = new_value['lat'], new_value['lon']
-        self.__current_data.fixtype = new_value['fixtype']
+        if new_value is not None:
+            self.__current_data.position = new_value['lat'], new_value['lon']
+            self.__current_data.fixtype = new_value['fixtype']
+        else:
+            self.__current_data.position = (None, None)
+            self.__current_data.fixtype = None
 
     def _update_speed(self, sender, **kw):
         self.__current_data.speed_in_ms = kw['new_value']
@@ -69,9 +73,11 @@ class Poller:
         if self.__time_provider.has_error_occured():
             self.__error_occurred.send(origin='position_provider', error=self.__position_provider.get_last_error())
         else:
-            self.__position_changed.send(
-                new_value=dict(lat=position[1][0], lon=position[1][1], fixtype=position[0]))
-
+            if position is None:
+                self.__position_changed.send(new_value=None)
+            else:
+                self.__position_changed.send(
+                    new_value=dict(lat=position[1][0], lon=position[1][1], fixtype=position[0]))
 
         speed = self.__speed_provider.get_speed()
         print("Speed {0}".format(speed))

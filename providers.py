@@ -87,16 +87,24 @@ class GpsProvider(DataProvider, TimeProvider, PositionProvider, SpeedProvider):
                     fixtype = int(self.__data_stream.mode)
                     if fixtype > 0:
                         self.__fixtype = fixtype
+                else:
+                    self.__fixtype = None
 
                 if self.__data_stream.lat != 'n/a' and self.__data_stream.lon != 'n/a':
                     self.__position = (float(self.__data_stream.lat), float(self.__data_stream.lon))
+                else:
+                    self.__position = (None, None)
 
                 if self.__data_stream.time != 'n/a':
                     time = parse(self.__data_stream.time)
                     self.__time = time.timestamp()
+                else:
+                    self.__time = None
 
                 if self.__data_stream.speed != 'n/a':
                     self.__speed = float(self.__data_stream.speed)
+                else:
+                    self.__speed = None
 
         except Exception as e:
             print("Could not retrieve gps data ", e)
@@ -109,7 +117,10 @@ class GpsProvider(DataProvider, TimeProvider, PositionProvider, SpeedProvider):
 
     def get_position(self):
         self.update()
-        return self.__fixtype, self.__position
+        if self.__fixtype is not None and self.__position is not (None, None):
+            return self.__fixtype, self.__position
+
+        return None
 
     def get_time(self):
         self.update()
