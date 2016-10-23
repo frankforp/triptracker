@@ -14,6 +14,7 @@
                 font_size: 25
                 on_press:
                     root.manager.transition.direction = 'right'
+                    root.manager.current = 'trip' if app.trip_collector.is_trip_active() else 'inactive_trip'
             Label:
                 text: 'Current'
                 pos_hint: {'top': 1}
@@ -24,6 +25,7 @@
                 font_size: 25
                 on_press:
                     root.manager.transition.direction = 'left'
+                    root.manager.current = 'settings'
 
         GridLayout:
             size_hint: 1, .8
@@ -69,3 +71,222 @@
             Label:
                 text: root.fixText
                 color: root.fixColor
+
+<SettingsScreen>
+    BoxLayout:
+        size: root.size
+        orientation: 'vertical'
+        BoxLayout:
+            size_hint: 1, .2
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Trip'
+                font_size: 25
+                on_press:
+                    root.manager.transition.direction = 'right'
+                    root.manager.current = 'trip' if app.trip_collector.is_trip_active() else 'inactive_trip'
+            Label:
+                text: 'Settings'
+                pos_hint: {'top': 1}
+                font_size: 40
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Current'
+                font_size: 25
+                on_press:
+                    root.manager.transition.direction = 'left'
+                    root.manager.current = 'current_data'
+
+<InactiveTripScreen>
+    BoxLayout:
+        size: root.size
+        orientation: 'vertical'
+        BoxLayout:
+            size_hint: 1, .2
+            Button:
+                size_hint: 1, .7
+                pos_hint: {'top': 1}
+                text: 'Current'
+                font_size: 25
+                on_press:
+                    root.manager.transition.direction = 'right'
+                    root.manager.current = 'current_data'
+            Label:
+                text: 'Trip'
+                pos_hint: {'top': 1}
+                font_size: 40
+            Button:
+                size_hint: 1, .7
+                pos_hint: {'top': 1}
+                text: 'Settings'
+                font_size: 25
+                on_press:
+                    root.manager.transition.direction = 'left'
+                    root.manager.current = 'settings'
+        Label:
+            text: 'No trip active. Press start'
+            color: 1, 0, 0, 1
+            font_size: 40
+
+        BoxLayout:
+            size_hint: 1, .2
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Start'
+                font_size: 25
+                on_press:
+                    root.start_trip()
+
+<TripScreen>
+    BoxLayout:
+        size: root.size
+        orientation: 'vertical'
+        BoxLayout:
+            size_hint: 1, .2
+            Button:
+                size_hint: 1, .7
+                pos_hint: {'top': 1}
+                text: 'Current'
+                font_size: 25
+                on_press:
+                    root.manager.transition.direction = 'right'
+                    root.manager.current = 'current_data'
+            Label:
+                text: 'Trip'
+                pos_hint: {'top': 1}
+                font_size: 40
+            Button:
+                size_hint: 1, .7
+                pos_hint: {'top': 1}
+                text: 'Settings'
+                font_size: 25
+                on_press:
+                    root.manager.transition.direction = 'left'
+                    root.manager.current = 'settings'
+
+
+        GridLayout:
+            pos_hint: {'top': 1}
+            size_hint: 1, .8
+            cols: 2
+            rows: 6
+            Label:
+                text: 'Type:'
+                font_size: 30
+            Label:
+                id: lblType
+                text: root.trip_type
+                font_size: 40
+                color: 1, 1, 0, 1
+            Label:
+                text: 'Started on:'
+                font_size: 30
+            Label:
+                id: lblStartTime
+                text: root.started_on
+                color: 1, 1, 0, 1
+                font_size: 40
+            Label:
+                text: 'Odometer at start:'
+                font_size: 30
+            Label:
+                id: lblStartOdometer
+                text: root.odometer
+                color: 1, 1, 0, 1
+                font_size: 40
+            Label:
+                text: 'Duration'
+                font_size: 30
+            Label:
+                id: lblDuration
+                text: root.duration
+                color: 1, 1, 0, 1
+                font_size: 40
+            Label:
+                text: 'Distance'
+                font_size: 30
+            Label:
+                id: lblDistance
+                text: root.dist
+                color: 1, 1, 0, 1
+                font_size: 40
+            Label:
+                text: 'Average speed'
+                font_size: 30
+            Label:
+                id: lblAvgSped
+                text: root.avg_speed
+                color: 1, 1, 0, 1
+                font_size: 40
+
+        BoxLayout:
+            size_hint: 1, .2
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Stop'
+                font_size: 25
+                on_press:
+                    root.stop_trip()
+
+            Button:
+                pos_hint: {'top': 1}
+                text: 'Pause'
+                font_size: 25
+                on_press:
+                    root.pause_trip()
+
+
+<NewTripInfo@ModalView>:
+    size_hint: None, None
+    size: 400, 400
+    auto_dismiss: False
+    entered_odometer_reading: ''
+    trip_type: 0
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 10
+        Label:
+            font_size: 30
+            size_hint: 1, None
+            size: 400, 50
+            pos_hint: {'top': 1}
+            text: 'Start trip'
+        Label:
+            size_hint: 1, None
+            size: 400, 50
+            text: 'Enter your current odometer reading'
+
+        TextInput:
+            size_hint: 1, None
+            size: 400, 50
+            id: txtEntered
+            multiline: False
+            font_size: 25
+            on_text: root.entered_odometer_reading = self.text
+
+        GridLayout:
+            rows: 2
+            cols: 2
+            Label:
+                text: 'Business'
+            CheckBox:
+                active: True
+                group: 'grpTripType'
+                on_active: root.trip_type = 0
+            Label:
+                text: 'Non business'
+            CheckBox:
+                group: 'grpTripType'
+                on_active: root.trip_type = 1
+
+        Label:
+            size_hint: 1, 0.4
+
+        Button:
+            padding: 20, 20
+            size_hint: 1, None
+            size: 400, 70
+            text: 'OK'
+            on_press:
+                root.dismiss()

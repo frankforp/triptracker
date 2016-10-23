@@ -21,7 +21,7 @@ def get_location_string(location):
         return '{0} {1}'.format(lat_string, lon_string)
 
 
-def get_speed(speed):
+def format_speed(speed):
     if speed is None:
         return "N/A"
     else:

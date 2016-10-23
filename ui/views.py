@@ -1,10 +1,12 @@
 from blinker import signal
+from kivy.app import App
 from kivy.clock import mainthread
+from kivy.factory import Factory
 from kivy.properties import StringProperty, NumericProperty, ObjectProperty
 from kivy.uix.screenmanager import Screen
 
-from models import CurrentData, NO_FIX, TWOD_FIX, THREED_FIX
-from utils import format_time, get_location_string, get_speed
+from models import CurrentData, NO_FIX, TWOD_FIX, THREED_FIX, BUSINESS
+from utils import format_time, get_location_string, format_speed
 
 
 class CurrentDataScreen(Screen):
@@ -66,9 +68,103 @@ class CurrentDataScreen(Screen):
 
     @mainthread
     def __update_speed(self, sender, **kw):
-        self.speed = get_speed(kw['new_value'])
+        self.speed = format_speed(kw['new_value'])
 
     def _updateMap(self, lat, lon):
         self.map_popup.lat = lat
         self.map_popup.lon = lon
         self.map.center_on(lat, lon)
+
+
+class SettingsScreen(Screen):
+    pass
+
+
+class InactiveTripScreen(Screen):
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+
+        self.start_trip_box = Factory.NewTripInfo()
+
+    def start_trip(self):
+        self.start_trip_box.bind(on_dismiss=self.modal_closed)
+        self.start_trip_box.open()
+
+    def modal_closed(self, instance):
+        print(instance.entered_odometer_reading)
+        print(instance.trip_type)
+        if instance.entered_odometer_reading == "":
+            return False
+
+        odometer = int(instance.entered_odometer_reading)
+        triptype = instance.trip_type
+        App.get_running_app().trip_collector.start(triptype, odometer)
+
+        App.get_running_app().sm.transition.direction = 'left'
+        App.get_running_app().sm.current = 'trip'
+
+
+
+class TripScreen(Screen):
+    __trip_type_changed = signal('trip_type_changed')
+    __odometer_start_changed = signal('odometer_start_changed')
+    __started_on_changed = signal('started_on_changed')
+    __duration_changed = signal('duration_changed')
+    __dist_changed = signal('dist_changed')
+    __avg_speed_changed = signal('avg_speed_changed')
+
+
+    trip_type = StringProperty("N/A")
+    started_on = StringProperty("N/A")
+    odometer = StringProperty("N/A")
+    duration = StringProperty("N/A")
+    dist = StringProperty("N/A")
+    avg_speed = StringProperty("N/A")
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.__trip_type_changed.connect(self.__update_trip_type)
+        self.__odometer_start_changed.connect(self.__update_odometer)
+        self.__started_on_changed.connect(self.__update_startedon)
+        self.__duration_changed.connect(self.__update_duration)
+        self.__dist_changed.connect(self.__update_dist)
+        self.__avg_speed_changed.connect(self.__update_avg_speed)
+
+
+    @mainthread
+    def __update_trip_type(self,sender, **kw):
+        if kw['newvalue'] == BUSINESS:
+            self.trip_type = "Business"
+        else:
+            self.trip_type = "Non business"
+
+    @mainthread
+    def __update_odometer(self, sender, **kw):
+        self.odometer = '{0}'.format(kw['newvalue'])
+
+    @mainthread
+    def __update_startedon(self, sender, **kw):
+        self.started_on = format_time(kw['newvalue'])
+
+    @mainthread
+    def __update_duration(self, sender, **kw):
+        self.duration = '{0}'.format(kw['newvalue'])
+
+    @mainthread
+    def __update_dist(self, sender, **kw):
+        self.dist = '{:.1f} km'.format(kw['newvalue'] / 1000)
+
+    @mainthread
+    def __update_avg_speed(self, sender, **kw):
+        self.avg_speed = format_speed(kw['newvalue'])
+
+
+    def stop_trip(self):
+        App.get_running_app().trip_collector.stop()
+        App.get_running_app().sm.transition.direction = 'left'
+        App.get_running_app().sm.current = 'current_data'
+
+
+    def pause_trip(self):
+        pass

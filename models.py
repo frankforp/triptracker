@@ -24,7 +24,7 @@ class TripData:
 
     def __init__(self, trip_type, odometer):
         self.trip_type = trip_type
-        self.odometer = odometer
+        self.odometer_start = odometer
 
     @property
     def trip_type(self):
@@ -32,7 +32,7 @@ class TripData:
 
     @trip_type.setter
     def trip_type(self, value):
-        if value != NON_BUSINESS or value != BUSINESS:
+        if value != NON_BUSINESS and value != BUSINESS:
             raise ValueError("Trip type must be BUSINESS or NON_BUSINESS")
         self.__type = value
         self.__trip_type_changed.send(newvalue=value)
@@ -65,7 +65,7 @@ class TripData:
 
     @duration.setter
     def duration(self, value):
-        if value < 0:
+        if value.total_seconds() < 0:
             raise ValueError("Duration must be positive")
         self.__duration = value
         self.__duration_changed.send(newvalue=value)
@@ -91,6 +91,12 @@ class TripData:
             raise ValueError("Average speed must be positive")
         self.__avg_speed = value
         self.__avg_speed_changed.send(newvalue=value)
+
+    def __repr__(self, *args, **kwargs):
+        return "[TripData: Type = {0}, odometer_start={1}, started_on={2}, " \
+               "duration={3},distance_covered={4}, average_speed={5}".format(self.trip_type, self.odometer_start,
+                                                                             self.started_on, self.duration,
+                                                                             self.distance_covered, self.average_speed)
 
 
 NO_FIX = 1

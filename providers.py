@@ -137,7 +137,7 @@ class StubbedProvider(DataProvider, TimeProvider, PositionProvider, SpeedProvide
     current_index = 0
 
     def start(self):
-        gpx_file = open("/home/developer/projects/triptracker/test/sampledata/sample_locations.gpx")
+        gpx_file = open("/home/developer/playground/triptracker/test/sampledata/sample_locations.gpx")
         print("Loading sample gpx data..")
         gpx = gpxpy.parse(gpx_file)
         self.gpxdata = [point for track in gpx.tracks for segment in track.segments for point in segment.points]
@@ -149,7 +149,7 @@ class StubbedProvider(DataProvider, TimeProvider, PositionProvider, SpeedProvide
         self.current_index = (self.current_index + 1) % len(self.gpxdata)
 
     def get_position(self):
-        result = (self.gpxdata[self.current_index].latitude, self.gpxdata[self.current_index].longitude)
+        result = (3, (self.gpxdata[self.current_index].latitude, self.gpxdata[self.current_index].longitude))
         return result
 
     def get_time(self):
@@ -158,9 +158,8 @@ class StubbedProvider(DataProvider, TimeProvider, PositionProvider, SpeedProvide
     def get_speed(self):
         result = None
         if self.current_index > 0:
-            curr_location = self.get_position()
-            previous_location = (
-            self.gpxdata[self.current_index - 1].latitude, self.gpxdata[self.current_index - 1].longitude)
+            curr_location = self.get_position()[1]
+            previous_location = (self.gpxdata[self.current_index - 1].latitude, self.gpxdata[self.current_index - 1].longitude)
             curr_time = self.gpxdata[self.current_index].time.timestamp()
             previous_time = self.gpxdata[self.current_index - 1].time.timestamp()
             dist_meters = vincenty(previous_location, curr_location).meters
@@ -171,3 +170,6 @@ class StubbedProvider(DataProvider, TimeProvider, PositionProvider, SpeedProvide
 
         self.update()
         return result
+
+    def has_error_occured(self):
+        pass
