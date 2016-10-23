@@ -1,17 +1,85 @@
-from blinker import signal
+import datetime
 
-from models import CurrentData
+from blinker import signal
+from geopy.distance import vincenty
+
+from models import CurrentData, TripData
 from utils import IntervalTimer
 
 
+class TripDataCollector:
+    __trip_data = None
+    __on_time_changed = signal('time_changed')
+    __on_position_changed = signal('position_changed')
+    __on_speed_changed = signal('speed_changed')
+
+    def start(self, trip_type, odometer_reading):
+        self.__trip_data = TripData(trip_type, odometer_reading)
+        self.__on_time_changed.connect(self._update_time)
+        self.__on_position_changed.connect(self._update_position)
+        # self.__on_speed_changed.connect(self._update_speed)
+        # self.__on_error_occurred.connect(self.__error_occurred)
+
+    def stop(self):
+        pass
+
+    def is_trip_active(self):
+        return self.__trip_data is not None
+
+    def _update_time(self, sender, **kw):
+        new_time = kw['new_value']
+
+        if self.__trip_data.started_on is None:
+            self.__trip_data.started_on = kw['new_value']
+            self.__trip_data.duration = self.__calculate_duration(self.__trip_data.started_on, new_time)
+            self.__trip_data.average_speed = self.__calculate_avgspeed(self.__trip_data.distance_covered,
+                                                                       self.__trip_data.duration)
+
+    def _update_position(self, sender, **kw):
+        old_pos = kw['old_value']
+        new_pos = kw['new_value']
+        self.__trip_data.distance_covered = self.__trip_data.distance_covered + self.__calculate_distance(old_pos,
+                                                                                                          new_pos)
+        self.__trip_data.average_speed = self.__calculate_avgspeed(self.__trip_data.distance_covered,
+                                                                   self.__trip_data.duration)
+
+    def __calculate_duration(self, start_time, end_time):
+        if start_time is None or end_time is None:
+            print("Warning: Cannot calculate duration because one of the times is None")
+            return
+
+        if start_time > end_time:
+            print("Error: Cannot calculate duration because start time > end_time")
+            return
+
+        st = datetime.datetime.fromtimestamp(start_time)
+        et = datetime.datetime.fromtimestamp(end_time)
+
+        return et - st
+
+    def __calculate_avgspeed(self, distance, duration):
+        if duration > 0:
+            return distance / (duration.total_seconds() * 3600)
+
+    def __calculate_distance(self, old_pos, new_pos):
+        if old_pos is (None,None) or new_pos is (None, None):
+            return 0
+
+        return vincenty(old_pos, new_pos).kilometers
+
+
+
+
+
 class CurrentDataCollector:
-    __current_data = CurrentData()
+    __current_data = None
     __on_time_changed = signal('new_time_available')
     __on_position_changed = signal('new_position_available')
     __on_speed_changed = signal('new_speed_available')
     __on_error_occurred = signal('provider_error_occured')
 
     def __init__(self):
+        self.__current_data = CurrentData()
         self.__on_time_changed.connect(self._update_time)
         self.__on_position_changed.connect(self._update_position)
         self.__on_speed_changed.connect(self._update_speed)
@@ -62,7 +130,7 @@ class Poller:
 
     def __poll(self):
         epoch_time = self.__time_provider.get_time()
-        print ("Time {0}".format(epoch_time))
+        print("Time {0}".format(epoch_time))
         if self.__time_provider.has_error_occured():
             self.__error_occurred.send(origin='time_provider', error=self.__time_provider.get_last_error())
         else:
