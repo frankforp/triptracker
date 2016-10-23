@@ -1,6 +1,8 @@
 from abc import ABCMeta, abstractmethod
 
+import gpxpy
 from dateutil.parser import parse
+from geopy.distance import vincenty
 from gps3 import agps3
 
 
@@ -29,8 +31,6 @@ class TimeProvider(metaclass=ABCMeta):
 
 
 class PositionProvider(metaclass=ABCMeta):
-
-
     @abstractmethod
     def get_position(self):
         pass
@@ -51,7 +51,6 @@ class SpeedProvider(metaclass=ABCMeta):
 
 
 class GpsProvider(DataProvider, TimeProvider, PositionProvider, SpeedProvider):
-
     __gpsd_socket = agps3.GPSDSocket()
     __data_stream = agps3.DataStream()
     __is_started = False
@@ -132,3 +131,43 @@ class GpsProvider(DataProvider, TimeProvider, PositionProvider, SpeedProvider):
     def get_last_error(self):
         return self.__last_error
 
+
+class StubbedProvider(DataProvider, TimeProvider, PositionProvider, SpeedProvider):
+    gpxdata = None
+    current_index = 0
+
+    def start(self):
+        gpx_file = open("/home/developer/projects/triptracker/test/sampledata/sample_locations.gpx")
+        print("Loading sample gpx data..")
+        gpx = gpxpy.parse(gpx_file)
+        self.gpxdata = [point for track in gpx.tracks for segment in track.segments for point in segment.points]
+
+    def stop(self):
+        pass
+
+    def update(self):
+        self.current_index = (self.current_index + 1) % len(self.gpxdata)
+
+    def get_position(self):
+        result = (self.gpxdata[self.current_index].latitude, self.gpxdata[self.current_index].longitude)
+        return result
+
+    def get_time(self):
+        return self.gpxdata[self.current_index].time.timestamp()
+
+    def get_speed(self):
+        result = None
+        if self.current_index > 0:
+            curr_location = self.get_position()
+            previous_location = (
+            self.gpxdata[self.current_index - 1].latitude, self.gpxdata[self.current_index - 1].longitude)
+            curr_time = self.gpxdata[self.current_index].time.timestamp()
+            previous_time = self.gpxdata[self.current_index - 1].time.timestamp()
+            dist_meters = vincenty(previous_location, curr_location).meters
+            duration = curr_time - previous_time
+
+            if duration > 0:
+                result = dist_meters / duration
+
+        self.update()
+        return result
