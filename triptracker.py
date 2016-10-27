@@ -9,13 +9,12 @@ from kivy.garden.mapview import MapView
 
 
 class TriptrackerApp(App):
-    #__provider = StubbedProvider()
-    __provider = GpsProvider()
-    __poller = Poller(__provider, __provider, __provider)
+    __provider = StubbedProvider()
+    # __provider = GpsProvider()
+    poller = Poller(__provider, __provider, __provider)
     curr_data_collector = CurrentDataCollector()
     trip_collector = TripDataCollector()
     sm = ScreenManager()
-
 
     def build(self):
         Builder.load_file('ui/triptracker.kv')
@@ -27,13 +26,10 @@ class TriptrackerApp(App):
         return self.sm
 
     def on_start(self):
-        self.__poller.start()
+        self.poller.start()
 
     def on_stop(self):
-        self.__poller.stop()
-
-
-
+        self.poller.stop()
 
 
 if __name__ == '__main__':

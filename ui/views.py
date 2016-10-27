@@ -15,14 +15,17 @@ class CurrentDataScreen(Screen):
     speed = StringProperty("N/A")
     fixText = StringProperty("NO FIX")
     fixColor = ObjectProperty((1, 0, 0, 1))
+    activeTripText = StringProperty("")
 
     map = ObjectProperty(None)
     map_popup = ObjectProperty(None)
 
-    __on_time_changed = signal('time_changed')
-    __on_position_changed = signal('position_changed')
-    __on_speed_changed = signal('speed_changed')
-    __on_fix_changed = signal('fix_changed')
+    __on_time_changed = signal('current_time_changed')
+    __on_position_changed = signal('current_position_changed')
+    __on_speed_changed = signal('current_speed_changed')
+    __on_fix_changed = signal('current_fix_changed')
+    __on_trip_started = signal('current_trip_started')
+    __on_trip_stopped = signal('current_trip_stopped')
 
     def __init__(self, **kw):
         super().__init__(**kw)
@@ -30,6 +33,8 @@ class CurrentDataScreen(Screen):
         self.__on_position_changed.connect(self.__update_position)
         self.__on_speed_changed.connect(self.__update_speed)
         self.__on_fix_changed.connect(self.__update_fix)
+        self.__on_trip_started.connect(self.__tripstarted)
+        self.__on_trip_stopped.connect(self.__tripstopped)
 
     @mainthread
     def __update_time(self, sender, **kw):
@@ -69,6 +74,14 @@ class CurrentDataScreen(Screen):
     @mainthread
     def __update_speed(self, sender, **kw):
         self.speed = format_speed(kw['new_value'])
+
+    @mainthread
+    def __tripstarted(self, sender, **kw):
+        self.activeTripText = "TRIP ACTIVE"
+
+    @mainthread
+    def __tripstopped(self, sender, **kw):
+        self.activeTripText = ""
 
     def _updateMap(self, lat, lon):
         self.map_popup.lat = lat
@@ -113,6 +126,7 @@ class TripScreen(Screen):
     __duration_changed = signal('duration_changed')
     __dist_changed = signal('dist_changed')
     __avg_speed_changed = signal('avg_speed_changed')
+    __tripdata_changed = signal('tripdata_changed')
 
 
     trip_type = StringProperty("N/A")
@@ -122,43 +136,24 @@ class TripScreen(Screen):
     dist = StringProperty("N/A")
     avg_speed = StringProperty("N/A")
 
+
     def __init__(self, **kw):
         super().__init__(**kw)
-        self.__trip_type_changed.connect(self.__update_trip_type)
-        self.__odometer_start_changed.connect(self.__update_odometer)
-        self.__started_on_changed.connect(self.__update_startedon)
-        self.__duration_changed.connect(self.__update_duration)
-        self.__dist_changed.connect(self.__update_dist)
-        self.__avg_speed_changed.connect(self.__update_avg_speed)
+        self.__tripdata_changed.connect(self.__update_screen)
 
 
     @mainthread
-    def __update_trip_type(self,sender, **kw):
-        if kw['newvalue'] == BUSINESS:
-            self.trip_type = "Business"
-        else:
-            self.trip_type = "Non business"
+    def __update_screen(self, sender, **kw):
+        self.trip_type = "Business" if sender.trip_type == BUSINESS else "Non business"
+        self.odometer = '{0}'.format(sender.odometer_start)
+        self.started_on = format_time(sender.started_on)
+        self.duration = '{0}'.format(sender.duration)
+        self.dist = '{:.1f} km'.format(sender.distance_covered / 1000)
+        self.avg_speed = format_speed(sender.average_speed)
 
-    @mainthread
-    def __update_odometer(self, sender, **kw):
-        self.odometer = '{0}'.format(kw['newvalue'])
 
-    @mainthread
-    def __update_startedon(self, sender, **kw):
-        self.started_on = format_time(kw['newvalue'])
-
-    @mainthread
-    def __update_duration(self, sender, **kw):
-        self.duration = '{0}'.format(kw['newvalue'])
-
-    @mainthread
-    def __update_dist(self, sender, **kw):
-        self.dist = '{:.1f} km'.format(kw['newvalue'] / 1000)
-
-    @mainthread
-    def __update_avg_speed(self, sender, **kw):
-        self.avg_speed = format_speed(kw['newvalue'])
-
+    def pause_trip(self):
+        pass
 
     def stop_trip(self):
         App.get_running_app().trip_collector.stop()
@@ -166,5 +161,3 @@ class TripScreen(Screen):
         App.get_running_app().sm.current = 'current_data'
 
 
-    def pause_trip(self):
-        pass

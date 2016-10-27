@@ -9,11 +9,11 @@ from utils import IntervalTimer
 
 class TripDataCollector:
     __trip_data = None
-    __on_time_changed = signal('time_changed')
-    __on_position_changed = signal('position_changed')
-    __on_speed_changed = signal('speed_changed')
-    __on_trip_started = signal('trip_started')
-    __on_trip_stopped = signal('trip_stopped')
+    __on_time_changed = signal('current_time_changed')
+    __on_position_changed = signal('current_position_changed')
+    __on_speed_changed = signal('current_speed_changed')
+    __on_trip_started = signal('current_trip_started')
+    __on_trip_stopped = signal('current_trip_stopped')
 
     def start(self, trip_type, odometer_reading):
         self.__trip_data = TripData(trip_type, odometer_reading)
@@ -30,7 +30,6 @@ class TripDataCollector:
         self.__trip_data = None
 
     def is_trip_active(self):
-
         return self.__trip_data is not None
 
     def _update_time(self, sender, **kw):

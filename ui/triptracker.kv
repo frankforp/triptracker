@@ -71,6 +71,10 @@
             Label:
                 text: root.fixText
                 color: root.fixColor
+            Label:
+                text: root.activeTripText
+                color: 1, 1, 0, 1
+
 
 <SettingsScreen>
     BoxLayout:
@@ -258,7 +262,8 @@
             text: 'Enter your current odometer reading'
 
         TextInput:
-            size_hint: 1, None
+            size_hint: 0.9, None
+            pos_hint: {'center_x': .5}
             size: 400, 50
             id: txtEntered
             multiline: False
@@ -284,9 +289,9 @@
             size_hint: 1, 0.4
 
         Button:
-            padding: 20, 20
-            size_hint: 1, None
-            size: 400, 70
+            size_hint: 0.6, None
+            pos_hint: {'center_x': .5}
+            size: 400, 50
             text: 'OK'
             on_press:
                 root.dismiss()

@@ -15,6 +15,8 @@ class TripData:
     __dist = 0
     __avg_speed = 0
 
+    __tripdata_changed = signal('tripdata_changed')
+
     __trip_type_changed = signal('trip_type_changed')
     __odometer_start_changed = signal('odometer_start_changed')
     __started_on_changed = signal('started_on_changed')
@@ -36,6 +38,7 @@ class TripData:
             raise ValueError("Trip type must be BUSINESS or NON_BUSINESS")
         self.__type = value
         self.__trip_type_changed.send(newvalue=value)
+        self.__tripdata_changed.send(self)
 
     @property
     def odometer_start(self):
@@ -47,6 +50,7 @@ class TripData:
             raise ValueError("Odometer setting must be positive")
         self.__odometer_start = value
         self.__odometer_start_changed.send(newvalue=value)
+        self.__tripdata_changed.send(self)
 
     @property
     def started_on(self):
@@ -58,6 +62,7 @@ class TripData:
             raise ValueError("Invalid time stampt for start time")
         self.__started_on = value
         self.__started_on_changed.send(newvalue=value)
+        self.__tripdata_changed.send(self)
 
     @property
     def duration(self):
@@ -69,6 +74,7 @@ class TripData:
             raise ValueError("Duration must be positive")
         self.__duration = value
         self.__duration_changed.send(newvalue=value)
+        self.__tripdata_changed.send(self)
 
     @property
     def distance_covered(self):
@@ -80,6 +86,7 @@ class TripData:
             raise ValueError("Distance must be positive")
         self.__dist = value
         self.__dist_changed.send(newvalue=value)
+        self.__tripdata_changed.send(self)
 
     @property
     def average_speed(self):
@@ -91,6 +98,7 @@ class TripData:
             raise ValueError("Average speed must be positive")
         self.__avg_speed = value
         self.__avg_speed_changed.send(newvalue=value)
+        self.__tripdata_changed.send(self)
 
     def __repr__(self, *args, **kwargs):
         return "[TripData: Type = {0}, odometer_start={1}, started_on={2}, " \
@@ -107,10 +115,10 @@ THREED_FIX = 3
 class CurrentData:
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger("CurrentData")
-    time_changed = signal('time_changed')
-    position_changed = signal('position_changed')
-    speed_changed = signal('speed_changed')
-    fixtype_changed = signal('fix_changed')
+    time_changed = signal('current_time_changed')
+    position_changed = signal('current_position_changed')
+    speed_changed = signal('current_speed_changed')
+    fixtype_changed = signal('current_fix_changed')
 
     __epoch_time = 0
     __position = (None, None)
