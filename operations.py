@@ -14,23 +14,32 @@ class TripDataCollector:
     __on_speed_changed = signal('current_speed_changed')
     __on_trip_started = signal('current_trip_started')
     __on_trip_stopped = signal('current_trip_stopped')
+    __on_trip_paused = signal('current_trip_paused')
+    __on_trip_resumed = signal('current_trip_resumed')
 
     def start(self, trip_type, odometer_reading):
-        self.__trip_data = TripData(trip_type, odometer_reading)
+        self.__trip_data = TripData(trip_type, odometer_reading * 1000)
         self.__on_time_changed.connect(self._update_time)
         self.__on_position_changed.connect(self._update_position)
         self.__on_trip_started.send()
-        # self.__on_speed_changed.connect(self._update_speed)
-        # self.__on_error_occurred.connect(self.__error_occurred)
+
+    def pause(self):
+        self.__on_time_changed.disconnect(self._update_time)
+        self.__on_position_changed.disconnect(self._update_position)
+        self.__on_trip_paused.send(time=self.__current_time, position=self.__current_pos)
+
+    def resume(self):
+        self.__on_time_changed.connect(self._update_time)
+        self.__on_position_changed.connect(self._update_position)
+        self.__on_trip_resumed.send(time=self.__current_time, position=self.__current_pos)
 
     def stop(self):
         self.__on_time_changed.disconnect(self._update_time)
         self.__on_position_changed.disconnect(self._update_position)
-        self.__on_trip_stopped.send()
+        new_odometer_value = self.__trip_data.odometer_start + self.__trip_data.distance_covered
+        self.__on_trip_stopped.send(time=self.__current_time, position=self.__current_pos,
+                                    new_odometer_value=new_odometer_value)
         self.__trip_data = None
-
-    def is_trip_active(self):
-        return self.__trip_data is not None
 
     def _update_time(self, sender, **kw):
         new_time = kw['new_value']
@@ -42,6 +51,7 @@ class TripDataCollector:
             self.__trip_data.duration = self.__calculate_duration(self.__trip_data.started_on, new_time)
             self.__trip_data.average_speed = self.__calculate_avgspeed(self.__trip_data.distance_covered,
                                                                        self.__trip_data.duration)
+            self.__current_time = new_time
             print(self.__trip_data)
 
     def _update_position(self, sender, **kw):
@@ -52,6 +62,7 @@ class TripDataCollector:
         self.__trip_data.average_speed = self.__calculate_avgspeed(self.__trip_data.distance_covered,
                                                                    self.__trip_data.duration)
 
+        self.__current_pos = new_pos
         print(self.__trip_data)
 
     def __calculate_duration(self, start_time, end_time):

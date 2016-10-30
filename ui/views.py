@@ -1,12 +1,16 @@
+from enum import Enum
+
 from blinker import signal
 from kivy.app import App
 from kivy.clock import mainthread
 from kivy.factory import Factory
-from kivy.properties import StringProperty, NumericProperty, ObjectProperty
+from kivy.properties import StringProperty, NumericProperty, ObjectProperty, BooleanProperty
 from kivy.uix.screenmanager import Screen
 
 from models import CurrentData, NO_FIX, TWOD_FIX, THREED_FIX, BUSINESS
 from utils import format_time, get_location_string, format_speed
+
+
 
 
 class CurrentDataScreen(Screen):
@@ -24,8 +28,6 @@ class CurrentDataScreen(Screen):
     __on_position_changed = signal('current_position_changed')
     __on_speed_changed = signal('current_speed_changed')
     __on_fix_changed = signal('current_fix_changed')
-    __on_trip_started = signal('current_trip_started')
-    __on_trip_stopped = signal('current_trip_stopped')
 
     def __init__(self, **kw):
         super().__init__(**kw)
@@ -33,8 +35,6 @@ class CurrentDataScreen(Screen):
         self.__on_position_changed.connect(self.__update_position)
         self.__on_speed_changed.connect(self.__update_speed)
         self.__on_fix_changed.connect(self.__update_fix)
-        self.__on_trip_started.connect(self.__tripstarted)
-        self.__on_trip_stopped.connect(self.__tripstopped)
 
     @mainthread
     def __update_time(self, sender, **kw):
@@ -75,13 +75,6 @@ class CurrentDataScreen(Screen):
     def __update_speed(self, sender, **kw):
         self.speed = format_speed(kw['new_value'])
 
-    @mainthread
-    def __tripstarted(self, sender, **kw):
-        self.activeTripText = "TRIP ACTIVE"
-
-    @mainthread
-    def __tripstopped(self, sender, **kw):
-        self.activeTripText = ""
 
     def _updateMap(self, lat, lon):
         self.map_popup.lat = lat
@@ -120,14 +113,13 @@ class InactiveTripScreen(Screen):
 
 
 class TripScreen(Screen):
-    __trip_type_changed = signal('trip_type_changed')
-    __odometer_start_changed = signal('odometer_start_changed')
-    __started_on_changed = signal('started_on_changed')
-    __duration_changed = signal('duration_changed')
-    __dist_changed = signal('dist_changed')
-    __avg_speed_changed = signal('avg_speed_changed')
+
     __tripdata_changed = signal('tripdata_changed')
 
+    __trip_stopped = signal('current_trip_stopped')
+    __trip_started = signal('current_trip_started')
+    __trip_paused = signal('current_trip_paused')
+    __trip_resumed = signal('current_trip_resumed')
 
     trip_type = StringProperty("N/A")
     started_on = StringProperty("N/A")
@@ -137,27 +129,59 @@ class TripScreen(Screen):
     avg_speed = StringProperty("N/A")
 
 
+
+
     def __init__(self, **kw):
         super().__init__(**kw)
         self.__tripdata_changed.connect(self.__update_screen)
+        self.__trip_stopped.connect(self.__trip_stop);
+        self.__trip_paused.connect(self.__trip_pause);
+        self.__trip_resumed.connect(self.__trip_resume);
+        self.__trip_started.connect(self.__trip_start)
 
 
     @mainthread
     def __update_screen(self, sender, **kw):
         self.trip_type = "Business" if sender.trip_type == BUSINESS else "Non business"
-        self.odometer = '{0}'.format(sender.odometer_start)
+        self.odometer = '{:.0f} km'.format(sender.odometer_start / 1000)
         self.started_on = format_time(sender.started_on)
         self.duration = '{0}'.format(sender.duration)
         self.dist = '{:.1f} km'.format(sender.distance_covered / 1000)
         self.avg_speed = format_speed(sender.average_speed)
 
 
+
     def pause_trip(self):
-        pass
+        App.get_running_app().trip_collector.pause()
 
     def stop_trip(self):
         App.get_running_app().trip_collector.stop()
+
+    def resume_trip(self):
+        App.get_running_app().trip_collector.resume()
+
+    @mainthread
+    def __trip_stop(self, sender, **kw):
+        App.get_running_app().trip_state = 0
         App.get_running_app().sm.transition.direction = 'left'
         App.get_running_app().sm.current = 'current_data'
+        print("Trip stopped. {0}".format(kw))
+
+    @mainthread
+    def __trip_start(self, sender, **kw):
+        App.get_running_app().trip_state = 1
+        print("Trip started")
+
+    @mainthread
+    def __trip_pause(self, sender, **kw):
+        App.get_running_app().trip_state = 2
+        print("Trip paused on {0} at {1} ".format(format_time(kw['time']), get_location_string(kw['position'])))
+
+    @mainthread
+    def __trip_resume(self, sender, **kw):
+        App.get_running_app().trip_state = 1
+        print("Trip resumed on {0} at {1} ".format(format_time(kw['time']), get_location_string(kw['position'])))
+
+
 
 

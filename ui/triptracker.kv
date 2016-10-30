@@ -14,7 +14,7 @@
                 font_size: 25
                 on_press:
                     root.manager.transition.direction = 'right'
-                    root.manager.current = 'trip' if app.trip_collector.is_trip_active() else 'inactive_trip'
+                    root.manager.current = 'trip' if app.trip_state == 1 or app.trip_state == 2 else 'inactive_trip'
             Label:
                 text: 'Current'
                 pos_hint: {'top': 1}
@@ -72,7 +72,7 @@
                 text: root.fixText
                 color: root.fixColor
             Label:
-                text: root.activeTripText
+                text: 'ACTIVE TRIP' if app.trip_state == 1 else 'TRIP PAUSED' if app.trip_state == 2 else ''
                 color: 1, 1, 0, 1
 
 
@@ -88,11 +88,12 @@
                 font_size: 25
                 on_press:
                     root.manager.transition.direction = 'right'
-                    root.manager.current = 'trip' if app.trip_collector.is_trip_active() else 'inactive_trip'
+                    root.manager.current = 'trip' if app.trip_state == 1  or app.trip_state == 2 else 'inactive_trip'
             Label:
                 text: 'Settings'
                 pos_hint: {'top': 1}
                 font_size: 40
+
             Button:
                 pos_hint: {'top': 1}
                 text: 'Current'
@@ -234,10 +235,10 @@
 
             Button:
                 pos_hint: {'top': 1}
-                text: 'Pause'
+                text: 'Resume' if app.trip_state == 2  else 'Pause'
                 font_size: 25
                 on_press:
-                    root.pause_trip()
+                    root.resume_trip() if app.trip_state == 2 else root.pause_trip()
 
 
 <NewTripInfo@ModalView>:
@@ -259,7 +260,7 @@
         Label:
             size_hint: 1, None
             size: 400, 50
-            text: 'Enter your current odometer reading'
+            text: 'Enter your current odometer reading in km'
 
         TextInput:
             size_hint: 0.9, None

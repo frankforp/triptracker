@@ -1,11 +1,13 @@
 from kivy.app import App
 from kivy.lang import Builder
+from kivy.properties import NumericProperty
 from kivy.uix.screenmanager import ScreenManager
 
 from operations import CurrentDataCollector, Poller, TripDataCollector
 from providers import GpsProvider, StubbedProvider
 from ui.views import CurrentDataScreen, InactiveTripScreen, SettingsScreen, TripScreen
 from kivy.garden.mapview import MapView
+
 
 
 class TriptrackerApp(App):
@@ -15,6 +17,8 @@ class TriptrackerApp(App):
     curr_data_collector = CurrentDataCollector()
     trip_collector = TripDataCollector()
     sm = ScreenManager()
+
+    trip_state = NumericProperty(0)
 
     def build(self):
         Builder.load_file('ui/triptracker.kv')
