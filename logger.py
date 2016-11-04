@@ -50,6 +50,8 @@ class TripLogger:
     __on_trip_stopped = signal('current_trip_stopped')
     __on_trip_paused = signal('current_trip_paused')
     __on_trip_resumed = signal('current_trip_resumed')
+    __on_logging_started = signal('logging_started')
+    __on_logging_stopped = signal('logging_stopped')
 
     def __init__(self, *logwriters):
         self.__logwriters = logwriters
@@ -62,6 +64,7 @@ class TripLogger:
         self.__on_trip_resumed.connect(self.__trip_resumed)
         for writer in self.__logwriters:
             writer.start()
+        self.__on_logging_started.send()
 
     def stop(self):
         self.__on_tpv_received.disconnect(self.__tpv_received)
@@ -71,6 +74,7 @@ class TripLogger:
         self.__on_trip_resumed.disconnect(self.__trip_resumed)
         for writer in self.__logwriters:
             writer.stop()
+        self.__on_logging_stopped.send()
 
 
     def __tpv_received(self, sender, **kw):

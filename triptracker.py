@@ -1,6 +1,6 @@
 from kivy.app import App
 from kivy.lang import Builder
-from kivy.properties import NumericProperty
+from kivy.properties import NumericProperty, BooleanProperty
 from kivy.uix.screenmanager import ScreenManager
 
 from operations import CurrentDataCollector, Poller, TripDataCollector
@@ -19,6 +19,7 @@ class TriptrackerApp(App):
     sm = ScreenManager()
 
     trip_state = NumericProperty(0)
+    is_logging_enabled = BooleanProperty(False)
 
     def build(self):
         Builder.load_file('ui/triptracker.kv')
