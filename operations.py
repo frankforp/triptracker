@@ -1,8 +1,11 @@
 import datetime
+import uuid
 
 from blinker import signal
 from geopy.distance import vincenty
 
+from logger import ConsoleWriter, JsonFileWriter
+from logger import TripLogger
 from models import CurrentData, TripData
 from utils import IntervalTimer
 
@@ -16,22 +19,30 @@ class TripDataCollector:
     __on_trip_stopped = signal('current_trip_stopped')
     __on_trip_paused = signal('current_trip_paused')
     __on_trip_resumed = signal('current_trip_resumed')
+    __logger = None
 
     def start(self, trip_type, odometer_reading):
-        self.__trip_data = TripData(trip_type, odometer_reading * 1000)
+
+        self.__trip_data = TripData(trip_type=trip_type, odometer=odometer_reading * 1000)
+        self.__logger = TripLogger(ConsoleWriter(),
+                                   JsonFileWriter('tracker_{uid}.json'.format(uid=self.__trip_data.trip_id)))
+        self.__logger.start()
         self.__on_time_changed.connect(self._update_time)
         self.__on_position_changed.connect(self._update_position)
-        self.__on_trip_started.send()
+        self.__on_trip_started.send(trip_id=self.__trip_data.trip_id, trip_type=self.__trip_data.trip_type,
+                                    odometer_reading=self.__trip_data.odometer_start)
 
     def pause(self):
         self.__on_time_changed.disconnect(self._update_time)
         self.__on_position_changed.disconnect(self._update_position)
         self.__on_trip_paused.send(time=self.__current_time, position=self.__current_pos)
+        self.__logger.stop()
 
     def resume(self):
         self.__on_time_changed.connect(self._update_time)
         self.__on_position_changed.connect(self._update_position)
         self.__on_trip_resumed.send(time=self.__current_time, position=self.__current_pos)
+        self.__logger.start()
 
     def stop(self):
         self.__on_time_changed.disconnect(self._update_time)
@@ -40,6 +51,7 @@ class TripDataCollector:
         self.__on_trip_stopped.send(time=self.__current_time, position=self.__current_pos,
                                     new_odometer_value=new_odometer_value)
         self.__trip_data = None
+        self.__logger.stop()
 
     def _update_time(self, sender, **kw):
         new_time = kw['new_value']
@@ -63,7 +75,6 @@ class TripDataCollector:
                                                                    self.__trip_data.duration)
 
         self.__current_pos = new_pos
-        print(self.__trip_data)
 
     def __calculate_duration(self, start_time, end_time):
         if start_time is None or end_time is None:
@@ -94,41 +105,34 @@ class TripDataCollector:
 
 class CurrentDataCollector:
     __current_data = None
-    __on_time_changed = signal('new_time_available')
-    __on_position_changed = signal('new_position_available')
-    __on_speed_changed = signal('new_speed_available')
     __on_error_occurred = signal('provider_error_occured')
+    __on_tpv_received = signal('new_tpv_available')
 
     def __init__(self):
         self.__current_data = CurrentData()
-        self.__on_time_changed.connect(self._update_time)
-        self.__on_position_changed.connect(self._update_position)
-        self.__on_speed_changed.connect(self._update_speed)
+        self.__on_tpv_received.connect(self.__update_tpv)
         self.__on_error_occurred.connect(self.__error_occurred)
 
-    def _update_time(self, sender, **kw):
-        self.__current_data.epoch_time = kw['new_value']
+    def __update_tpv(self, sender, **kw):
+        data = kw['newvalue']
+        self.__current_data.epoch_time = data['t']
 
-    def _update_position(self, sender, **kw):
-        new_value = kw['new_value']
-        if new_value is not None:
-            self.__current_data.position = new_value['lat'], new_value['lon']
-            self.__current_data.fixtype = new_value['fixtype']
+        p = data['p']
+        if p is not None:
+            self.__current_data.position = p['lat'], p['lon']
+            self.__current_data.fixtype = p['fixtype']
         else:
             self.__current_data.position = (None, None)
             self.__current_data.fixtype = None
 
-    def _update_speed(self, sender, **kw):
-        self.__current_data.speed_in_ms = kw['new_value']
+        self.__current_data.speed_in_ms = data['v']
 
     def __error_occurred(self, sender, **kw):
         print("Error getting data from {0}: {1}".format(kw['origin'], kw['error']))
 
 
 class Poller:
-    __time_changed = signal('new_time_available')
-    __position_changed = signal('new_position_available')
-    __speed_changed = signal('new_speed_available')
+    __tpv_changed = signal('new_tpv_available')
     __error_occurred = signal('provider_error_occured')
 
     def __init__(self, time_provider, position_provider, speed_provider, interval_in_seconds=1):
@@ -151,26 +155,25 @@ class Poller:
 
     def __poll(self):
         epoch_time = self.__time_provider.get_time()
-        print("Time {0}".format(epoch_time))
+        position = self.__position_provider.get_position()
+        speed = self.__speed_provider.get_speed()
+
         if self.__time_provider.has_error_occured():
             self.__error_occurred.send(origin='time_provider', error=self.__time_provider.get_last_error())
-        else:
-            self.__time_changed.send(new_value=epoch_time)
+            return
 
-        position = self.__position_provider.get_position()
-        print("Pos {0}".format(position))
-        if self.__time_provider.has_error_occured():
+        if self.__position_provider.has_error_occured():
             self.__error_occurred.send(origin='position_provider', error=self.__position_provider.get_last_error())
-        else:
-            if position is None:
-                self.__position_changed.send(new_value=None)
-            else:
-                self.__position_changed.send(
-                    new_value=dict(lat=position[1][0], lon=position[1][1], fixtype=position[0]))
+            return
 
-        speed = self.__speed_provider.get_speed()
-        print("Speed {0}".format(speed))
         if self.__speed_provider.has_error_occured():
             self.__error_occurred.send(origin='speed_provider', error=self.__speed_provider.get_last_error())
-        else:
-            self.__speed_changed.send(new_value=speed)
+            return
+
+        new_tpv = dict(t=epoch_time, p=None, v=speed)
+
+        if position is not None:
+            new_tpv['p'] = dict(lat=position[1][0], lon=position[1][1], fixtype=position[0])
+
+        # print(new_tpv)
+        self.__tpv_changed.send(newvalue=new_tpv)

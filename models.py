@@ -1,5 +1,7 @@
 import datetime
 import logging
+import uuid
+from enum import Enum
 
 from blinker import signal
 
@@ -27,6 +29,11 @@ class TripData:
     def __init__(self, trip_type, odometer):
         self.trip_type = trip_type
         self.odometer_start = odometer
+        self.__trip_id = uuid.uuid4().hex
+
+    @property
+    def trip_id(self):
+        return self.__trip_id
 
     @property
     def trip_type(self):
@@ -184,3 +191,45 @@ class CurrentData:
 
         self.__speed_in_ms = new_value
         self.speed_changed.send(old_value=old_value, new_value=new_value)
+
+
+class LogEventType(Enum):
+    NOP = 0
+    TRIP_STARTED = 1
+    TRIP_STOPPED = 2
+    TRIP_PAUSED = 3
+    TRIP_RESUMED = 4
+    DATAPOINT = 5
+
+class LogEvent:
+    __timestamp = 0
+    __event_type = LogEventType.NOP
+    __data = dict()
+
+    @property
+    def event_type(self):
+        return self.__event_type
+
+    @event_type.setter
+    def event_type(self, new_value):
+        self.__event_type = new_value
+
+    @property
+    def timestamp(self):
+        return self.timestamp
+
+    @timestamp.setter
+    def timestamp(self, new_value):
+        if new_value is not None and new_value < 0:
+            raise ValueError("Epoch time cannot be negative")
+
+        self.__timestamp = new_value
+
+    @property
+    def data(self):
+        return self.__data
+
+    @data.setter
+    def data(self, new_value):
+        self.__data = new_value
+
