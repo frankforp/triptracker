@@ -11,8 +11,8 @@ from kivy.garden.mapview import MapView
 
 
 class TriptrackerApp(App):
-    __provider = StubbedProvider()
-    # __provider = GpsProvider()
+    __provider = StubbedProvider("sample_locations.gpx")
+    #__provider = GpsProvider()
     poller = Poller(__provider, __provider, __provider)
     curr_data_collector = CurrentDataCollector()
     trip_collector = TripDataCollector()

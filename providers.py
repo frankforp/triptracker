@@ -136,13 +136,16 @@ class StubbedProvider(DataProvider, TimeProvider, PositionProvider, SpeedProvide
     gpxdata = None
     current_index = 0
 
+    def __init__(self, filename):
+        self.__filename = filename
+
     def start(self):
-        #gpx_file = open("/home/developer/playground/triptracker/test/sampledata/sample_locations.gpx")
-        gpx_file = open("/home/wildfly/development/other/triptracker/test/sample_locations.gpx")
+        gpx_file = open(self.__filename)
+
         print("Loading sample gpx data..")
         gpx = gpxpy.parse(gpx_file)
         self.gpxdata = [point for track in gpx.tracks for segment in track.segments for point in segment.points]
-
+        
     def stop(self):
         pass
 
