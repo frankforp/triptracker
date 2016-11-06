@@ -82,10 +82,6 @@ class CurrentDataScreen(Screen):
         self.map.center_on(lat, lon)
 
 
-class SettingsScreen(Screen):
-    pass
-
-
 class InactiveTripScreen(Screen):
 
     def __init__(self, **kw):
@@ -105,7 +101,15 @@ class InactiveTripScreen(Screen):
 
         odometer = int(instance.entered_odometer_reading)
         triptype = instance.trip_type
-        App.get_running_app().trip_collector.start(triptype, odometer)
+
+        is_logging_enabled = App.get_running_app().config.get('logging', 'is_logging_enabled')
+        is_file_logging_enabled = App.get_running_app().config.get('logging', 'is_file_logging_enabled')
+        logdir = App.get_running_app().config.get('logging', 'file_log_dir')
+
+        if is_logging_enabled == '1' and is_file_logging_enabled == '1':
+            App.get_running_app().trip_collector.start(triptype, odometer, log_options=["File"], logdir=logdir)
+        else:
+            App.get_running_app().trip_collector.start(triptype, odometer)
 
         App.get_running_app().sm.transition.direction = 'left'
         App.get_running_app().sm.current = 'trip'

@@ -1,10 +1,11 @@
 import datetime
+import os
 import uuid
 
 from blinker import signal
 from geopy.distance import vincenty
 
-from logger import ConsoleWriter, JsonFileWriter
+from logger import ConsoleWriter, JsonFileWriter, NullWriter
 from logger import TripLogger
 from models import CurrentData, TripData
 from utils import IntervalTimer
@@ -19,14 +20,17 @@ class TripDataCollector:
     __on_trip_stopped = signal('current_trip_stopped')
     __on_trip_paused = signal('current_trip_paused')
     __on_trip_resumed = signal('current_trip_resumed')
-    __logger = None
+    __logger = TripLogger(ConsoleWriter(), NullWriter())
 
-    def start(self, trip_type, odometer_reading):
+    def start(self, trip_type, odometer_reading, log_options=None, logdir='.'):
 
         self.__trip_data = TripData(trip_type=trip_type, odometer=odometer_reading * 1000)
-        self.__logger = TripLogger(ConsoleWriter(),
-                                   JsonFileWriter('tracker_{uid}.json'.format(uid=self.__trip_data.trip_id)))
-        self.__logger.start()
+
+        if log_options is not None and "File" in log_options:
+            filename = os.path.join(logdir, 'tracker_{uid}.json')
+            self.__logger = TripLogger(ConsoleWriter(),
+                                       JsonFileWriter(filename.format(uid=self.__trip_data.trip_id)))
+
         self.__on_time_changed.connect(self._update_time)
         self.__on_position_changed.connect(self._update_position)
         self.__on_trip_started.send(trip_id=self.__trip_data.trip_id, trip_type=self.__trip_data.trip_type,
@@ -36,22 +40,19 @@ class TripDataCollector:
         self.__on_time_changed.disconnect(self._update_time)
         self.__on_position_changed.disconnect(self._update_position)
         self.__on_trip_paused.send(time=self.__current_time, position=self.__current_pos)
-        self.__logger.stop()
 
     def resume(self):
         self.__on_time_changed.connect(self._update_time)
         self.__on_position_changed.connect(self._update_position)
         self.__on_trip_resumed.send(time=self.__current_time, position=self.__current_pos)
-        self.__logger.start()
 
     def stop(self):
         self.__on_time_changed.disconnect(self._update_time)
         self.__on_position_changed.disconnect(self._update_position)
         new_odometer_value = self.__trip_data.odometer_start + self.__trip_data.distance_covered
         self.__on_trip_stopped.send(time=self.__current_time, position=self.__current_pos,
-                                    new_odometer_value=new_odometer_value)
+                                    new_odometer_value=new_odometer_value, trip_data=self.__trip_data)
         self.__trip_data = None
-        self.__logger.stop()
 
     def _update_time(self, sender, **kw):
         new_time = kw['new_value']

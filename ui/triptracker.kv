@@ -24,8 +24,7 @@
                 text: 'Settings'
                 font_size: 25
                 on_press:
-                    root.manager.transition.direction = 'left'
-                    root.manager.current = 'settings'
+                    app.open_settings()
 
         GridLayout:
             size_hint: 1, .8
@@ -75,33 +74,6 @@
                 text: 'ACTIVE TRIP' if app.trip_state == 1 else 'TRIP PAUSED' if app.trip_state == 2 else ''
                 color: 1, 1, 0, 1
 
-
-<SettingsScreen>
-    BoxLayout:
-        size: root.size
-        orientation: 'vertical'
-        BoxLayout:
-            size_hint: 1, .2
-            Button:
-                pos_hint: {'top': 1}
-                text: 'Trip'
-                font_size: 25
-                on_press:
-                    root.manager.transition.direction = 'right'
-                    root.manager.current = 'trip' if app.trip_state == 1  or app.trip_state == 2 else 'inactive_trip'
-            Label:
-                text: 'Settings'
-                pos_hint: {'top': 1}
-                font_size: 40
-
-            Button:
-                pos_hint: {'top': 1}
-                text: 'Current'
-                font_size: 25
-                on_press:
-                    root.manager.transition.direction = 'left'
-                    root.manager.current = 'current_data'
-
 <InactiveTripScreen>
     BoxLayout:
         size: root.size
@@ -126,8 +98,7 @@
                 text: 'Settings'
                 font_size: 25
                 on_press:
-                    root.manager.transition.direction = 'left'
-                    root.manager.current = 'settings'
+                    app.open_settings()
         Label:
             text: 'No trip active. Press start'
             color: 1, 0, 0, 1
@@ -166,8 +137,7 @@
                 text: 'Settings'
                 font_size: 25
                 on_press:
-                    root.manager.transition.direction = 'left'
-                    root.manager.current = 'settings'
+                    app.open_settings()
 
 
         GridLayout:
