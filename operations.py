@@ -39,18 +39,18 @@ class TripDataCollector:
     def pause(self):
         self.__on_time_changed.disconnect(self._update_time)
         self.__on_position_changed.disconnect(self._update_position)
-        self.__on_trip_paused.send(time=self.__current_time, position=self.__current_pos)
+        self.__on_trip_paused.send(trip_id=self.__trip_data.trip_id, time=self.__current_time, position=self.__current_pos)
 
     def resume(self):
         self.__on_time_changed.connect(self._update_time)
         self.__on_position_changed.connect(self._update_position)
-        self.__on_trip_resumed.send(time=self.__current_time, position=self.__current_pos)
+        self.__on_trip_resumed.send(trip_id=self.__trip_data.trip_id, time=self.__current_time, position=self.__current_pos)
 
     def stop(self):
         self.__on_time_changed.disconnect(self._update_time)
         self.__on_position_changed.disconnect(self._update_position)
         new_odometer_value = self.__trip_data.odometer_start + self.__trip_data.distance_covered
-        self.__on_trip_stopped.send(time=self.__current_time, position=self.__current_pos,
+        self.__on_trip_stopped.send(trip_id=self.__trip_data.trip_id, time=self.__current_time, position=self.__current_pos,
                                     new_odometer_value=new_odometer_value, trip_data=self.__trip_data)
         self.__trip_data = None
 
@@ -65,7 +65,6 @@ class TripDataCollector:
             self.__trip_data.average_speed = self.__calculate_avgspeed(self.__trip_data.distance_covered,
                                                                        self.__trip_data.duration)
             self.__current_time = new_time
-            print(self.__trip_data)
 
     def _update_position(self, sender, **kw):
         old_pos = kw['old_value']
