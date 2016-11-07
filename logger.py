@@ -26,17 +26,40 @@ class JsonFileWriter(LogWriter):
         self.__filename = filename
 
     def write(self, log_event):
-        self.__lines.append(log_event)
-        print("Logged to file");
+        with open(self.__filename, 'a') as file:
+            json_string = json.dumps(log_event)
+            file.write(json_string)
+            file.write(',')
+            file.flush()
 
-    def start(self):
-        self.__lines = []
+        print("Logged to file")
 
     def stop(self):
-        with open(self.__filename, 'a') as file:
-            json_string = json.dumps(self.__lines)
-            file.write(json_string)
-            file.write('\n')
+        self.__fixup_json(self.__filename)
+
+    def __fixup_json(self, filename):
+        contents = []
+        index = 0
+        with open(filename, 'r') as file:
+            for line in file:
+                if index == 0:
+                    changed_line = '[' + line
+                    contents.append(changed_line)
+                else:
+                    contents.append(line)
+
+                index += 1
+
+        contents = self.__replace_last_comma_with_closing_bracket(contents)
+
+        with open(filename, 'w') as file:
+            file.write("".join(contents))
+
+    def __replace_last_comma_with_closing_bracket(self, contents):
+        new_last_line = list(contents[len(contents) - 1])
+        new_last_line[len(new_last_line) - 1] = ']'
+        contents[len(contents) - 1] = "".join(new_last_line)
+        return contents
 
 
 class ConsoleWriter(LogWriter):
@@ -102,7 +125,6 @@ class TripLogger:
         for writer in self.__logwriters:
             writer.stop()
         self.__on_logging_stopped.send()
-
 
     def __trip_resumed(self, sender, **kw):
         data = dict(timestamp=time.time(), eventtype=LogEventType.TRIP_RESUMED.name, data=kw)
