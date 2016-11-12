@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='triptracker',
-    version='0.1',
+    version='1.0',
     packages=[''],
     url='https://github.com/keigezellig/triptracker',
     license='',
