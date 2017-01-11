@@ -113,3 +113,6 @@ out/
 .idea_modules/
 
 cache
+*.json
+*.ini
+logs/

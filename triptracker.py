@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.properties import NumericProperty, BooleanProperty
@@ -75,6 +77,7 @@ class TriptrackerApp(App):
 
     trip_state = NumericProperty(0)
     is_logging_enabled = BooleanProperty(False)
+    software_version = "1.0.1"
 
     def build(self):
         Builder.load_file('ui/triptracker.kv')
@@ -115,7 +118,7 @@ class TriptrackerApp(App):
             self.__should_restart = True
 
 
-    def close_settings(self):
+    def close_settings(self, *largs):
         """
         The settings panel has been closed.
         """
@@ -153,3 +156,6 @@ class TriptrackerApp(App):
 
 if __name__ == '__main__':
     TriptrackerApp().run()
+
+
+

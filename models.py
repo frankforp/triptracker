@@ -5,9 +5,8 @@ from enum import Enum
 
 from blinker import signal
 
-NON_BUSINESS = 0
-BUSINESS = 1
-
+BUSINESS = 0
+NON_BUSINESS = 1
 
 class TripData:
     __type = NON_BUSINESS
