@@ -115,7 +115,7 @@ class TriptrackerApp(App):
             self.__should_restart = True
 
 
-    def close_settings(self):
+    def close_settings(self, *largs):
         """
         The settings panel has been closed.
         """
