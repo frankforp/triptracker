@@ -73,6 +73,12 @@
             Label:
                 text: 'ACTIVE TRIP' if app.trip_state == 1 else 'TRIP PAUSED' if app.trip_state == 2 else ''
                 color: 1, 1, 0, 1
+            Label:
+                text: 'S/W version: '+app.software_version
+                font_size: 8
+                pos_hint: {'right': 1}
+
+
 
 <InactiveTripScreen>
     BoxLayout:

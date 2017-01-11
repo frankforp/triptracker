@@ -77,6 +77,7 @@ class TriptrackerApp(App):
 
     trip_state = NumericProperty(0)
     is_logging_enabled = BooleanProperty(False)
+    software_version = "DEV"
 
     def build(self):
         Builder.load_file('ui/triptracker.kv')
@@ -155,3 +156,6 @@ class TriptrackerApp(App):
 
 if __name__ == '__main__':
     TriptrackerApp().run()
+
+
+
