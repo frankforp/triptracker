@@ -79,6 +79,8 @@ class TriptrackerApp(App):
     is_logging_enabled = BooleanProperty(False)
     software_version = "DEV"
 
+
+
     def build(self):
         Builder.load_file('ui/triptracker.kv')
         self.settings_cls = SettingsWithSidebar
@@ -96,6 +98,7 @@ class TriptrackerApp(App):
         config.setdefaults('logging', {'is_logging_enabled': False, 'is_file_logging_enabled': False, 'file_log_dir': '.'})
         config.setdefaults('providers',
                            {'provider': 'GPSD', 'fake_file': ''})
+        config.setdefaults('startup', {'last_odometer': ''})
 
     def build_settings(self, settings):
         """

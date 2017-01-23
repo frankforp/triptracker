@@ -1,8 +1,10 @@
 from enum import Enum
 
 from blinker import signal
+from kivy import config
 from kivy.app import App
 from kivy.clock import mainthread
+from kivy.config import Config
 from kivy.factory import Factory
 from kivy.properties import StringProperty, NumericProperty, ObjectProperty, BooleanProperty
 from kivy.uix.screenmanager import Screen
@@ -90,7 +92,9 @@ class InactiveTripScreen(Screen):
         self.start_trip_box = Factory.NewTripInfo()
 
     def start_trip(self):
+
         self.start_trip_box.bind(on_dismiss=self.modal_closed)
+        self.start_trip_box.ids['txtEntered'].text = App.get_running_app().config.get('startup', 'last_odometer')
         self.start_trip_box.open()
 
     def modal_closed(self, instance):
@@ -169,6 +173,9 @@ class TripScreen(Screen):
         App.get_running_app().trip_state = 0
         App.get_running_app().sm.transition.direction = 'left'
         App.get_running_app().sm.current = 'current_data'
+        last_odometer = int(kw['new_odometer_value'] / 1000)
+        App.get_running_app().config.set('startup', 'last_odometer', last_odometer)
+        App.get_running_app().config.write()
         print("Trip stopped. {0}".format(kw))
 
     @mainthread
